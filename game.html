@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoffeeHunter - 咖啡猎人</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #e94560;
+      --primary-dark: #c73e54;
+      --bg-dark: #1a1a2e;
+      --bg-darker: #0f0f1a;
+      --bg-card: rgba(30, 30, 50, 0.9);
+      --bg-card-hover: rgba(50, 50, 70, 0.9);
+      --text-primary: #e0e0e0;
+      --text-secondary: #888;
+      --accent-gold: #ffd700;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #ef4444;
+      --info: #4a9eff;
+      --border-color: #333;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #16213e 100%);
+      min-height: 100vh;
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+    #app { width: 100vw; height: 100vh; position: relative; }
+    .hidden { display: none !important; }
+    .scene {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: opacity 0.3s ease;
+    }
+    /* 主菜单 */
+    #main-menu {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(ellipse at center, #2a2a4e 0%, var(--bg-dark) 100%);
+    }
+    .menu-title {
+      font-size: 4rem;
+      color: var(--primary);
+      text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+      margin-bottom: 1rem;
+    }
+    .menu-subtitle {
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      margin-bottom: 3rem;
+    }
+    .menu-buttons { display: flex; flex-direction: column; gap: 1rem; }
+    .btn {
+      padding: 15px 40px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      min-width: 200px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+    }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--primary);
+    }
+    /* 状态栏 */
+    .status-bar {
+      background: var(--bg-darker);
+      padding: 12px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--primary);
+    }
+    .status-left { display: flex; align-items: center; gap: 2rem; }
+    .status-title { color: var(--primary); font-size: 1.3rem; font-weight: bold; }
+    .player-stats { display: flex; gap: 2rem; }
+    .stat { display: flex; align-items: center; gap: 8px; }
+    .stat-icon { font-size: 1.3rem; }
+    .stat-value { color: var(--accent-gold); font-weight: bold; font-size: 1.1rem; }
+    .scene-buttons { display: flex; gap: 10px; }
+    .btn-small { padding: 8px 16px; font-size: 0.9rem; min-width: auto; }
+    /* 地图选择 */
+    #map-select-scene { display: flex; flex-direction: column; }
+    .map-select-content {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .select-title { font-size: 2rem; margin-bottom: 2rem; color: var(--text-primary); }
+    .map-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 1000px;
+    }
+    .map-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 15px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .map-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .map-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+    }
+    .map-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .map-card-name { font-size: 1.4rem; font-weight: bold; color: var(--primary); }
+    .map-card-difficulty {
+      font-size: 0.9rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(100, 100, 100, 0.3);
+    }
+    .map-card-difficulty.easy { color: var(--success); }
+    .map-card-difficulty.medium { color: var(--warning); }
+    .map-card-difficulty.hard { color: var(--danger); }
+    .map-card-desc { color: var(--text-secondary); margin-bottom: 15px; line-height: 1.6; }
+    .map-card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+    .map-tag {
+      padding: 4px 10px;
+      background: rgba(100, 100, 100, 0.2);
+      border-radius: 15px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .map-card-rewards { font-size: 0.9rem; color: var(--accent-gold); }
+    .map-card-rewards span { margin-right: 15px; }
+    .start-explore-btn { margin-top: 3rem; padding: 15px 50px; font-size: 1.3rem; }
+    .start-explore-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    /* 探索场景 */
+    #explore-scene { display: flex; }
+    .explore-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .explore-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: var(--bg-card);
+      border-radius: 10px;
+    }
+    .explore-info { display: flex; gap: 30px; }
+    .explore-info-item { display: flex; align-items: center; gap: 8px; }
+    .explore-info-label { color: var(--text-secondary); }
+    .explore-info-value { color: var(--accent-gold); font-weight: bold; }
+    .map-container {
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: 15px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: auto;
+    }
+    .map-grid { display: grid; gap: 2px; }
+    .map-cell {
+      width: 45px;
+      height: 45px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.4rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .map-cell.fog {
+      background: rgba(20, 20, 35, 0.95);
+      color: rgba(60, 60, 80, 0.3);
+    }
+    .map-cell.revealed { background: rgba(60, 80, 60, 0.6); }
+    .map-cell.player {
+      background: rgba(233, 69, 96, 0.6);
+      box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+      animation: pulse 1.5s infinite;
+    }
+    .map-cell.exit-point {
+      background: rgba(74, 222, 128, 0.4);
+      border: 2px solid var(--success);
+    }
+    .map-cell.danger { background: rgba(239, 68, 68, 0.3); }
+    .map-cell:hover { transform: scale(1.05); z-index: 10; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); }
+      50% { box-shadow: 0 0 25px rgba(233, 69, 96, 0.8); }
+    }
+    .explore-sidebar {
+      width: 300px;
+      background: var(--bg-darker);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .panel {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .panel-title { color: var(--primary); font-weight: bold; font-size: 1rem; }
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .inventory-slot {
+      width: 55px;
+      height: 55px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .inventory-slot:hover {
+      border-color: var(--primary);
+      background: rgba(233, 69, 96, 0.1);
+    }
+    .inventory-slot .item-icon { font-size: 1.6rem; }
+    .inventory-slot .item-count {
+      position: absolute;
+      bottom: 2px;
+      right: 5px;
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      font-weight: bold;
+    }
+    .controls-info {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+    .controls-info span { color: var(--primary); font-weight: bold; }
+    .controls-info kbd {
+      background: rgba(100, 100, 100, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin: 0 3px;
+    }
+    .message-log {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      max-height: 200px;
+    }
+    .message {
+      padding: 6px 8px;
+      border-left: 3px solid var(--border-color);
+      margin-bottom: 5px;
+      border-radius: 0 4px 4px 0;
+    }
+    .message.info {
+      border-left-color: var(--info);
+      background: rgba(74, 158, 255, 0.1);
+    }
+    .message.success {
+      border-left-color: var(--success);
+      background: rgba(74, 222, 128, 0.1);
+    }
+    .message.warning {
+      border-left-color: var(--warning);
+      background: rgba(251, 191, 36, 0.1);
+    }
+    .message.danger {
+      border-left-color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+    /* 制作工坊 */
+    #workshop-scene { display: flex; flex-direction: column; }
+    .workshop-content { flex: 1; display: flex; gap: 20px; padding: 20px; }
+    .workshop-main {
+      flex: 2;
+      background: var(--bg-card);
+      border-radius: 15px;
+      padding: 25px;
+    }
+    .workshop-title {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .workstations {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+    .workstation {
+      flex: 1;
+      background: var(--bg-darker);
+      border: 3px solid var(--border-color);
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .workstation:hover {
+      border-color: var(--primary);
+      transform: translateY(-5px);
+    }
+    .workstation-icon { font-size: 3rem; margin-bottom: 10px; }
+    .workstation-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--primary);
+      margin-bottom: 5px;
+    }
+    .workstation-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 15px;
+    }
+    .workstation-slot {
+      min-height: 60px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px dashed var(--border-color);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .workstation-slot:hover {
+      border-color: var(--primary);
+      background: rgba(233, 69, 96, 0.1);
+    }
+    .workstation-slot.has-item {
+      border-style: solid;
+      background: rgba(233, 69, 96, 0.1);
+    }
+    .workstation-item { display: flex; flex-direction: column; align-items: center; }
+    .workstation-item-icon { font-size: 2rem; }
+    .workstation-item-name { font-size: 0.8rem; margin-top: 5px; }
+    .workstation-btn {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    .workstation-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .arrow-connector { font-size: 2rem; color: var(--text-secondary); }
+    .workshop-sidebar {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .craft-progress {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+    }
+    .progress-title { color: var(--primary); font-weight: bold; margin-bottom: 10px; }
+    .progress-steps { display: flex; flex-direction: column; gap: 8px; }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .progress-step.completed { background: rgba(74, 222, 128, 0.2); }
+    .progress-step-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+    .progress-step-icon.pending { background: var(--border-color); }
+    .progress-step-icon.completed { background: var(--success); }
+    .finished-coffee-container {
+      margin-top: 20px;
+      background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(100, 150, 100, 0.2));
+      border: 2px solid var(--success);
+      border-radius: 10px;
+      padding: 15px;
+    }
+    .coffee-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--success);
+      margin-bottom: 10px;
+    }
+    .coffee-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 15px;
+    }
+    .coffee-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 15px;
+    }
+    .coffee-stat { text-align: center; }
+    .coffee-stat-label { font-size: 0.75rem; color: var(--text-secondary); }
+    .coffee-stat-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+    .coffee-stat-value.positive { color: var(--success); }
+    .coffee-stat-value.negative { color: var(--danger); }
+    .coffee-stat-value.gold { color: var(--accent-gold); }
+    .coffee-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 15px;
+    }
+    .coffee-tag {
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      background: rgba(233, 69, 96, 0.2);
+      color: var(--primary);
+    }
+    /* 商店场景 */
+    #shop-scene { display: flex; flex-direction: column; }
+    .shop-content { flex: 1; display: flex; gap: 20px; padding: 20px; }
+    .customers-area {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .customers-title { font-size: 1.5rem; color: var(--primary); }
+    .customers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .customer-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 15px;
+      padding: 20px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .customer-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+    }
+    .customer-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+    }
+    .customer-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .customer-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.8rem;
+    }
+    .customer-info { flex: 1; }
+    .customer-name { font-weight: bold; font-size: 1.1rem; margin-bottom: 3px; }
+    .customer-type { font-size: 0.85rem; color: var(--text-secondary); }
+    .customer-demands { margin-bottom: 15px; }
+    .demands-title { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
+    .demand-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .demand-tag {
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.85rem;
+      background: rgba(100, 100, 100, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .demand-tag.optional { opacity: 0.6; border: 1px dashed var(--border-color); }
+    .customer-reward {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
+    }
+    .reward-info { display: flex; gap: 15px; }
+    .reward-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--accent-gold);
+      font-weight: bold;
+    }
+    .shop-sidebar {
+      width: 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .sell-panel {
+      background: var(--bg-card);
+      border-radius: 15px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+    .sell-title { font-size: 1.2rem; color: var(--primary); margin-bottom: 15px; }
+    .no-selection {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 20px;
+    }
+    .match-info {
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .match-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .match-item:last-child {
+      margin-bottom: 0;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color);
+      font-weight: bold;
+    }
+    .match-label { color: var(--text-secondary); }
+    .match-value.gold { color: var(--accent-gold); }
+    .match-value.success { color: var(--success); }
+    .match-value.danger { color: var(--danger); }
+    .shop-buttons { display: flex; flex-direction: column; gap: 10px; }
+    .day-summary {
+      background: var(--bg-card);
+      border-radius: 15px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+    .summary-title { font-size: 1.1rem; color: var(--primary); margin-bottom: 15px; }
+    .summary-stats { display: flex; flex-direction: column; gap: 10px; }
+    .summary-stat { display: flex; justify-content: space-between; }
+    .summary-stat-label { color: var(--text-secondary); }
+    .summary-stat-value { font-weight: bold; color: var(--accent-gold); }
+    /* 动画 */
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 主菜单 -->
+    <div id="main-menu" class="scene">
+      <div class="menu-title">☕ CoffeeHunter</div>
+      <div class="menu-subtitle">咖啡猎人 - 在迷雾中探索，采集极品咖啡豆</div>
+      <div class="menu-buttons">
+        <button class="btn btn-primary" onclick="Game.startNewGame()">🎮 开始游戏</button>
+        <button class="btn btn-secondary" onclick="Game.showHelp()">📖 游戏说明</button>
+      </div>
+    </div>
+    
+    <!-- 地图选择 -->
+    <div id="map-select-scene" class="scene hidden">
+      <div class="status-bar">
+        <div class="status-left"><span class="status-title">🗺️ 选择探索区域</span></div>
+        <div class="player-stats">
+          <div class="stat"><span class="stat-icon">💰</span><span class="stat-value" id="menu-gold">100</span></div>
+          <div class="stat"><span class="stat-icon">⭐</span><span class="stat-value" id="menu-reputation">0</span></div>
+          <div class="stat"><span class="stat-icon">📅</span><span class="stat-value" id="menu-day">1</span></div>
+        </div>
+        <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small" onclick="Game.showScene('main-menu')">🏠 返回</button>
+        </div>
+      </div>
+      <div class="map-select-content">
+        <h2 class="select-title">选择今天要探索的地区</h2>
+        <div class="map-cards" id="map-cards"></div>
+        <button class="btn btn-primary start-explore-btn" id="start-explore-btn" disabled onclick="Game.startExploration()">
+          🚀 开始探索
+        </button>
+      </div>
+    </div>
+    
+    <!-- 探索场景 -->
+    <div id="explore-scene" class="scene hidden">
+      <div class="status-bar">
+        <div class="status-left"><span class="status-title">🌲 探索中</span></div>
+        <div class="player-stats">
+          <div class="stat"><span class="stat-icon">📍</span><span class="stat-value" id="explore-area">神秘森林</span></div>
+          <div class="stat"><span class="stat-icon">🎒</span><span class="stat-value" id="explore-items">0</span></div>
+        </div>
+        <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small" onclick="Game.tryExitExplore()">🚪 结束探索</button>
+        </div>
+      </div>
+      <div class="explore-main">
+        <div class="explore-header">
+          <div class="explore-info">
+            <div class="explore-info-item">
+              <span class="explore-info-label">探索进度:</span>
+              <span class="explore-info-value" id="explore-progress">0%</span>
+            </div>
+            <div class="explore-info-item">
+              <span class="explore-info-label">发现物品:</span>
+              <span class="explore-info-value" id="explore-found">0</span>
+            </div>
+            <div class="explore-info-item">
+              <span class="explore-info-label">逃离点:</span>
+              <span class="explore-info-value" id="exit-count">1/2</span>
+            </div>
+          </div>
+        </div>
+        <div class="map-container">
+          <div id="explore-map-grid" class="map-grid"></div>
+        </div>
+      </div>
+      <div class="explore-sidebar">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🎒 背包</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);" id="inventory-count">0件</span>
+          </div>
+          <div class="inventory-grid" id="explore-inventory"></div>
+        </div>
+        <div class="controls-info">
+          <strong>操作说明:</strong><br>
+          <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动<br>
+          <kbd>空格</kbd> 采集物品<br>
+          <kbd>ESC</kbd> 结束探索<br><br>
+          <span>💡 提示:</span> 寻找<span style="color: var(--success);">绿色</span>逃离点结束探索<br>
+          <span>⚠️ 注意:</span> 避开<span style="color: var(--danger);">红色</span>野生动物
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📜 事件</span></div>
+          <div class="message-log" id="explore-messages"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 制作工坊 -->
+    <div id="workshop-scene" class="scene hidden">
+      <div class="status-bar">
+        <div class="status-left"><span class="status-title">⚗️ 咖啡制作工坊</span></div>
+        <div class="player-stats">
+          <div class="stat"><span class="stat-icon">💰</span><span class="stat-value" id="workshop-gold">100</span></div>
+          <div class="stat"><span class="stat-icon">⭐</span><span class="stat-value" id="workshop-reputation">0</span></div>
+        </div>
+        <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small" onclick="Game.showScene('explore-scene')">🌲 去探索</button>
+          <button class="btn btn-primary btn-small" onclick="Game.showScene('shop-scene')">🏪 去商店</button>
+        </div>
+      </div>
+      <div class="workshop-content">
+        <div class="workshop-main">
+          <h2 class="workshop-title">咖啡制作工作台</h2>
+          <div class="workstations">
+            <div class="workstation">
+              <div class="workstation-icon">🔥</div>
+              <div class="workstation-name">烘焙</div>
+              <div class="workstation-desc">生豆 → 熟豆</div>
+              <div class="workstation-slot" id="roast-slot">
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入生豆</span>
+              </div>
+              <button class="btn btn-secondary workstation-btn" id="roast-btn" onclick="Game.performRoast()" disabled>
+                开始烘焙
+              </button>
+            </div>
+            <div class="arrow-connector">→</div>
+            <div class="workstation">
+              <div class="workstation-icon">⚙️</div>
+              <div class="workstation-name">研磨</div>
+              <div class="workstation-desc">熟豆 → 咖啡粉</div>
+              <div class="workstation-slot" id="grind-slot">
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入熟豆</span>
+              </div>
+              <button class="btn btn-secondary workstation-btn" id="grind-btn" onclick="Game.performGrind()" disabled>
+                开始研磨
+              </button>
+            </div>
+            <div class="arrow-connector">→</div>
+            <div class="workstation">
+              <div class="workstation-icon">💧</div>
+              <div class="workstation-name">萃取</div>
+              <div class="workstation-desc">咖啡粉 → 咖啡液</div>
+              <div class="workstation-slot" id="brew-slot">
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入咖啡粉</span>
+              </div>
+              <button class="btn btn-secondary workstation-btn" id="brew-btn" onclick="Game.performBrew()" disabled>
+                开始萃取
+              </button>
+            </div>
+            <div class="arrow-connector">→</div>
+            <div class="workstation">
+              <div class="workstation-icon">🥛</div>
+              <div class="workstation-name">调和</div>
+              <div class="workstation-desc">咖啡液 + 配料</div>
+              <div class="workstation-slot" id="blend-slot">
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入咖啡液</span>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px;">
+                附加配料: <span id="additives-display">无</span>
+              </div>
+              <button class="btn btn-primary workstation-btn" id="blend-btn" onclick="Game.performBlend()" disabled>
+                制作咖啡
+              </button>
+            </div>
+          </div>
+          <div class="craft-progress" style="margin-top: 30px;">
+            <div class="progress-title">制作进度</div>
+            <div class="progress-steps" id="craft-progress">
+              <div class="progress-step">
+                <div class="progress-step-icon pending">1</div>
+                <span>烘焙</span>
+              </div>
+              <div class="progress-step">
+                <div class="progress-step-icon pending">2</div>
+                <span>研磨</span>
+              </div>
+              <div class="progress-step">
+                <div class="progress-step-icon pending">3</div>
+                <span>萃取</span>
+              </div>
+              <div class="progress-step">
+                <div class="progress-step-icon pending">4</div>
+                <span>调和</span>
+              </div>
+            </div>
+          </div>
+          <div id="finished-coffee-container" class="finished-coffee-container hidden">
+            <div class="coffee-name" id="finished-coffee-name">拿铁咖啡</div>
+            <div class="coffee-desc" id="finished-coffee-desc">一杯精心制作的咖啡</div>
+            <div class="coffee-stats">
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">正面风味</div>
+                <div class="coffee-stat-value positive" id="finished-coffee-positive">+15</div>
+              </div>
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">负面风味</div>
+                <div class="coffee-stat-value negative" id="finished-coffee-negative">-5</div>
+              </div>
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">总评分</div>
+                <div class="coffee-stat-value gold" id="finished-coffee-score">10</div>
+              </div>
+            </div>
+            <div class="coffee-tags" id="finished-coffee-tags"></div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="Game.storeCoffee()">
+              📦 存入咖啡库存
+            </button>
+          </div>
+        </div>
+        <div class="workshop-sidebar">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">🎒 原材料</span></div>
+            <div class="inventory-grid" id="workshop-inventory"></div>
+            <div style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary);">
+              💡 点击物品选择，然后点击装置槽位放入
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">☕ 咖啡库存</span>
+              <span style="font-size: 0.8rem; color: var(--text-secondary);" id="coffee-stock-count">0杯</span>
+            </div>
+            <div class="inventory-grid" id="coffee-inventory"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">📜 制作记录</span></div>
+            <div class="message-log" id="workshop-messages"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 商店场景 -->
+    <div id="shop-scene" class="scene hidden">
+      <div class="status-bar">
+        <div class="status-left"><span class="status-title">🏪 咖啡店</span></div>
+        <div class="player-stats">
+          <div class="stat"><span class="stat-icon">💰</span><span class="stat-value" id="shop-gold">100</span></div>
+          <div class="stat"><span class="stat-icon">⭐</span><span class="stat-value" id="shop-reputation">0</span></div>
+          <div class="stat"><span class="stat-icon">📅</span><span class="stat-value">第 <span id="shop-day">1</span> 天</span></div>
+        </div>
+        <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small" onclick="Game.showScene('workshop-scene')">⚗️ 去制作</button>
+          <button class="btn btn-primary btn-small" onclick="Game.nextDay()">⏭️ 下一天</button>
+        </div>
+      </div>
+      <div class="shop-content">
+        <div class="customers-area">
+          <h2 class="customers-title">👥 今日客人 (<span id="customer-count">0</span>/7)</h2>
+          <div class="customers-grid" id="customers-grid"></div>
+        </div>
+        <div class="shop-sidebar">
+          <div class="sell-panel">
+            <div class="sell-title">💸 售卖咖啡</div>
+            <div id="selected-customer-area">
+              <div class="no-selection">选择一位客人进行售卖</div>
+            </div>
+            <div id="match-area" class="hidden">
+              <div class="match-info" id="match-info"></div>
+            </div>
+            <div class="shop-buttons">
+              <button class="btn btn-primary" id="sell-coffee-btn" disabled onclick="Game.sellToCustomer()">
+                💰 售卖咖啡
+              </button>
+              <button class="btn btn-secondary" onclick="Game.clearShopSelection()">取消选择</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">☕ 待售咖啡</span>
+              <span style="font-size: 0.8rem; color: var(--text-secondary);" id="shop-coffee-count">0杯</span>
+            </div>
+            <div class="inventory-grid" id="shop-coffee-inventory"></div>
+          </div>
+          <div class="day-summary">
+            <div class="summary-title">📊 今日总结</div>
+            <div class="summary-stats">
+              <div class="summary-stat">
+                <span class="summary-stat-label">已售出:</span>
+                <span class="summary-stat-value" id="sold-count">0杯</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-stat-label">今日收入:</span>
+                <span class="summary-stat-value" id="today-income">0💰</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-stat-label">满意度:</span>
+                <span class="summary-stat-value" id="satisfaction">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="./src/game.js"></script>
+</body>
+</html>
