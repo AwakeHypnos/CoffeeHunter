@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoffeeHunter - 咖啡猎人</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+    
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    .status-bar {
+      background: rgba(26, 26, 46, 0.9);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e94560;
+    }
+    
+    .status-bar h1 {
+      color: #e94560;
+      font-size: 1.5rem;
+    }
+    
+    .player-stats {
+      display: flex;
+      gap: 30px;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stat-label {
+      color: #888;
+      font-size: 0.85rem;
+    }
+    
+    .stat-value {
+      color: #ffd700;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    
+    .game-scene {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+      padding: 20px;
+    }
+    
+    .main-area {
+      flex: 2;
+      background: rgba(30, 30, 50, 0.8);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid #333;
+    }
+    
+    .side-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .panel {
+      background: rgba(30, 30, 50, 0.8);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid #333;
+    }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 8px;
+    }
+    
+    .panel-title {
+      color: #e94560;
+      font-weight: bold;
+    }
+    
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .inventory-slot {
+      width: 50px;
+      height: 50px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #555;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .inventory-slot:hover {
+      border-color: #e94560;
+      background: rgba(233, 69, 96, 0.1);
+    }
+    
+    .inventory-slot .item-icon {
+      font-size: 1.5rem;
+    }
+    
+    .inventory-slot .item-count {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 0.7rem;
+      color: #ffd700;
+      font-weight: bold;
+    }
+    
+    .crafting-station {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .crafting-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .crafting-step:hover:not(.disabled) {
+      background: rgba(233, 69, 96, 0.2);
+    }
+    
+    .crafting-step.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .crafting-step-icon {
+      font-size: 1.5rem;
+    }
+    
+    .crafting-step-info {
+      flex: 1;
+    }
+    
+    .crafting-step-name {
+      font-weight: bold;
+      color: #e94560;
+    }
+    
+    .crafting-step-desc {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #e94560, #c73e54);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: rgba(100, 100, 100, 0.3);
+      color: #e0e0e0;
+      border: 1px solid #555;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(100, 100, 100, 0.5);
+    }
+    
+    .message-log {
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    
+    .message {
+      padding: 5px;
+      border-left: 3px solid #555;
+      margin-bottom: 5px;
+    }
+    
+    .message.info {
+      border-left-color: #4a9eff;
+      color: #4a9eff;
+    }
+    
+    .message.success {
+      border-left-color: #4ade80;
+      color: #4ade80;
+    }
+    
+    .message.warning {
+      border-left-color: #fbbf24;
+      color: #fbbf24;
+    }
+    
+    .message.error {
+      border-left-color: #ef4444;
+      color: #ef4444;
+    }
+    
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .map-grid {
+      display: grid;
+      gap: 2px;
+    }
+    
+    .map-cell {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .map-cell.fog {
+      background: rgba(50, 50, 70, 0.9);
+      color: rgba(100, 100, 120, 0.3);
+    }
+    
+    .map-cell.revealed {
+      background: rgba(60, 80, 60, 0.6);
+    }
+    
+    .map-cell.player {
+      background: rgba(233, 69, 96, 0.6);
+      box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+    }
+    
+    .map-cell.home {
+      background: rgba(100, 150, 200, 0.6);
+    }
+    
+    .map-cell:hover {
+      transform: scale(1.05);
+    }
+    
+    .controls-info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(26, 26, 46, 0.9);
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      border: 1px solid #444;
+    }
+    
+    .controls-info span {
+      color: #e94560;
+      font-weight: bold;
+    }
+    
+    .coffee-result {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(100, 150, 100, 0.2);
+      border-radius: 5px;
+      border: 1px solid #4a4;
+    }
+    
+    .coffee-result h3 {
+      color: #4ade80;
+      margin-bottom: 10px;
+    }
+    
+    .coffee-stats {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .coffee-stat {
+      text-align: center;
+    }
+    
+    .coffee-stat-label {
+      font-size: 0.75rem;
+      color: #888;
+    }
+    
+    .coffee-stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    .coffee-stat-value.positive {
+      color: #4ade80;
+    }
+    
+    .coffee-stat-value.negative {
+      color: #ef4444;
+    }
+    
+    .coffee-stat-value.gold {
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="status-bar">
+      <h1>☕ CoffeeHunter - 咖啡猎人</h1>
+      <div class="player-stats">
+        <div class="stat">
+          <span class="stat-label">💰 金币</span>
+          <span class="stat-value" id="gold-display">100</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">⭐ 声望</span>
+          <span class="stat-value" id="reputation-display">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">📅 天数</span>
+          <span class="stat-value" id="day-display">1</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">📍 位置</span>
+          <span class="stat-value" id="location-display">🏠 家中</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="game-scene">
+      <div class="main-area">
+        <div class="panel-header">
+          <span class="panel-title">🗺️ 探索地图</span>
+          <span id="exploration-mode" style="color: #888; font-size: 0.85rem;">模式: 探索</span>
+        </div>
+        <div class="map-container">
+          <div id="map-grid" class="map-grid"></div>
+          <div class="controls-info">
+            <span>↑↓←→</span> 或 <span>WASD</span> 移动 | <span>空格</span> 采集 | <span>H</span> 回家
+          </div>
+        </div>
+      </div>
+      
+      <div class="side-panel">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🎒 背包</span>
+            <span style="color: #888; font-size: 0.8rem;">点击物品查看详情</span>
+          </div>
+          <div id="inventory" class="inventory-grid"></div>
+        </div>
+        
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">⚗️ 咖啡制作工坊</span>
+            <span id="craft-status" style="color: #888; font-size: 0.8rem;">需要回家才能制作</span>
+          </div>
+          <div class="crafting-station">
+            <div id="step-roast" class="crafting-step disabled">
+              <span class="crafting-step-icon">🔥</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">烘焙</div>
+                <div class="crafting-step-desc">生豆 → 熟豆</div>
+              </div>
+            </div>
+            <div id="step-grind" class="crafting-step disabled">
+              <span class="crafting-step-icon">⚙️</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">研磨</div>
+                <div class="crafting-step-desc">熟豆 → 咖啡粉</div>
+              </div>
+            </div>
+            <div id="step-brew" class="crafting-step disabled">
+              <span class="crafting-step-icon">💧</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">萃取</div>
+                <div class="crafting-step-desc">咖啡粉 → 咖啡液</div>
+              </div>
+            </div>
+            <div id="step-blend" class="crafting-step disabled">
+              <span class="crafting-step-icon">🥛</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">调和</div>
+                <div class="crafting-step-desc">制作最终咖啡</div>
+              </div>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-craft-coffee" class="btn btn-primary" disabled>☕ 制作咖啡</button>
+            <button id="btn-sell-coffee" class="btn btn-secondary" disabled>💰 售卖咖啡</button>
+          </div>
+          
+          <div id="coffee-result" class="coffee-result" style="display: none;">
+            <h3 id="coffee-name">拿铁咖啡</h3>
+            <p id="coffee-description">一杯精心制作的咖啡</p>
+            <div class="coffee-stats">
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">正面风味</div>
+                <div id="coffee-positive" class="coffee-stat-value positive">+15</div>
+              </div>
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">负面风味</div>
+                <div id="coffee-negative" class="coffee-stat-value negative">-5</div>
+              </div>
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">总评分</div>
+                <div id="coffee-score" class="coffee-stat-value gold">10</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📜 事件日志</span>
+          </div>
+          <div id="message-log" class="message-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // ============================================
+    // Item Database - 物品数据库
+    // ============================================
+    
+    const itemDatabase = {
+      green_colombian: {
+        id: 'green_colombian',
+        name: '哥伦比亚生豆',
+        type: 'green_bean',
+        icon: '🫘',
+        description: '哥伦比亚产的平衡生豆，甜感和坚果味突出',
+        baseValue: 12,
+        flavors: [
+          { name: 'sweet', value: 4, isPositive: true },
+          { name: 'nutty', value: 3, isPositive: true },
+          { name: 'chocolate', value: 2, isPositive: true }
+        ],
+        rarity: 'common'
+      },
+      green_ethiopian: {
+        id: 'green_ethiopian',
+        name: '埃塞俄比亚生豆',
+        type: 'green_bean',
+        icon: '🫘',
+        description: '来自埃塞俄比亚的优质生豆，带有明显的果香和花香',
+        baseValue: 15,
+        flavors: [
+          { name: 'fruity', value: 5, isPositive: true },
+          { name: 'floral', value: 4, isPositive: true },
+          { name: 'sour', value: 2, isPositive: false }
+        ],
+        rarity: 'uncommon'
+      },
+      green_kenyan: {
+        id: 'green_kenyan',
+        name: '肯尼亚生豆',
+        type: 'green_bean',
+        icon: '🫘',
+        description: '肯尼亚产的特色生豆，明亮的酸感',
+        baseValue: 18,
+        flavors: [
+          { name: 'fruity', value: 6, isPositive: true },
+          { name: 'sour', value: 4, isPositive: false },
+          { name: 'sweet', value: 2, isPositive: true }
+        ],
+        rarity: 'rare'
+      },
+      green_brazilian: {
+        id: 'green_brazilian',
+        name: '巴西生豆',
+        type: 'green_bean',
+        icon: '🫘',
+        description: '巴西产的基础生豆',
+        baseValue: 8,
+        flavors: [
+          { name: 'nutty', value: 3, isPositive: true },
+          { name: 'chocolate', value: 2, isPositive: true },
+          { name: 'bitter', value: 1, isPositive: false }
+        ],
+        rarity: 'common'
+      },
+      
+      roasted_medium: {
+        id: 'roasted_medium',
+        name: '中烘焙豆',
+        type: 'roasted_bean',
+        icon: '🟫',
+        description: '中度烘焙的咖啡豆，平衡的酸苦感',
+        baseValue: 25,
+        flavors: [
+          { name: 'sweet', value: 4, isPositive: true },
+          { name: 'nutty', value: 3, isPositive: true },
+          { name: 'chocolate', value: 3, isPositive: true }
+        ],
+        rarity: 'common'
+      },
+      
+      coffee_powder_medium: {
+        id: 'coffee_powder_medium',
+        name: '中磨咖啡粉',
+        type: 'coffee_powder',
+        icon: '🥣',
+        description: '中研磨的咖啡粉，适合手冲和滴滤',
+        baseValue: 28,
+        flavors: [
+          { name: 'fruity', value: 3, isPositive: true },
+          { name: 'sweet', value: 3, isPositive: true },
+          { name: 'sour', value: 1, isPositive: false }
+        ],
+        rarity: 'common'
+      },
+      
+      coffee_liquid_pour_over: {
+        id: 'coffee_liquid_pour_over',
+        name: '手冲咖啡',
+        type: 'coffee_liquid',
+        icon: '☕',
+        description: '清澈的手冲咖啡液',
+        baseValue: 38,
+        flavors: [
+          { name: 'fruity', value: 4, isPositive: true },
+          { name: 'floral', value: 3, isPositive: true },
+          { name: 'sweet', value: 3, isPositive: true }
+        ],
+        rarity: 'common'
+      },
+      
+      milk_whole: {
+        id: 'milk_whole',
+        name: '全脂牛奶',
+        type: 'milk',
+        icon: '🥛',
+        description: '新鲜全脂牛奶，增添丝滑口感',
+        baseValue: 8,
+        flavors: [
+          { name: 'sweet', value: 2, isPositive: true },
+          { name: 'watery', value: 1, isPositive: false }
+        ],
+        rarity: 'common'
+      },
+      milk_oat: {
+        id: 'milk_oat',
+        name: '燕麦奶',
+        type: 'milk',
+        icon: '🌾',
+        description: '顺滑燕麦奶，咖啡的完美搭档',
+        baseValue: 15,
+        flavors: [
+          { name: 'sweet', value: 3, isPositive: true },
+          { name: 'nutty', value: 2, isPositive: true }
+        ],
+        rarity: 'uncommon'
+      },
+      
+      fruit_vanilla: {
+        id: 'fruit_vanilla',
+        name: '香草荚',
+        type: 'fruit',
+        icon: '🌿',
+        description: '马达加斯加香草荚，增添甜美香气',
+        baseValue: 20,
+        flavors: [
+          { name: 'sweet', value: 4, isPositive: true },
+          { name: 'floral', value: 2, isPositive: true }
+        ],
+        rarity: 'uncommon'
+      },
+      fruit_orange: {
+        id: 'fruit_orange',
+        name: '橙皮',
+        type: 'fruit',
+        icon: '🍊',
+        description: '新鲜橙皮，增添明亮的柑橘风味',
+        baseValue: 10,
+        flavors: [
+          { name: 'fruity', value: 3, isPositive: true },
+          { name: 'sour', value: 2, isPositive: false }
+        ],
+        rarity: 'common'
+      },
+      fruit_berry: {
+        id: 'fruit_berry',
+        name: '混合浆果',
+        type: 'fruit',
+        icon: '🫐',
+        description: '新鲜蓝莓和覆盆子的混合物',
+        baseValue: 15,
+        flavors: [
+          { name: 'fruity', value: 5, isPositive: true },
+          { name: 'sweet', value: 2, isPositive: true },
+          { name: 'sour', value: 1, isPositive: false }
+        ],
+        rarity: 'uncommon'
+      },
+      
+      spice_cinnamon: {
+        id: 'spice_cinnamon',
+        name: '肉桂棒',
+        type: 'spice',
+        icon: '🌰',
+        description: '锡兰肉桂棒，温暖的辛香料',
+        baseValue: 15,
+        flavors: [
+          { name: 'spicy', value: 4, isPositive: true },
+          { name: 'sweet', value: 2, isPositive: true }
+        ],
+        rarity: 'common'
+      },
+      spice_cardamom: {
+        id: 'spice_cardamom',
+        name: '小豆蔻',
+        type: 'spice',
+        icon: '🫛',
+        description: '印度小豆蔻，独特的香料风味',
+        baseValue: 25,
+        flavors: [
+          { name: 'spicy', value: 5, isPositive: true },
+          { name: 'floral', value: 2, isPositive: true }
+        ],
+        rarity: 'rare'
+      }
+    };
+    
+    // ============================================
+    // Map Generator - 地图生成器
+    // ============================================
+    
+    const MAP_WIDTH = 15;
+    const MAP_HEIGHT = 11;
+    const HOME_POSITION = { x: 7, y: 5 };
+    
+    const terrainIcons = {
+      grass: '🌿',
+      forest: '🌲',
+      mountain: '⛰️',
+      water: '💧',
+      home: '🏠'
+    };
+    
+    const terrainNames = {
+      grass: '草地',
+      forest: '森林',
+      mountain: '山地',
+      water: '水域',
+      home: '家中'
+    };
+    
+    function generateMap() {
+      const map = [];
+      
+      for (let y = 0; y < MAP_HEIGHT; y++) {
+        map[y] = [];
+        for (let x = 0; x < MAP_WIDTH; x++) {
+          const isHome = x === HOME_POSITION.x && y === HOME_POSITION.y;
+          
+          let terrain = 'grass';
+          if (isHome) {
+            terrain = 'home';
+          } else {
+            const rand = Math.random();
+            if (rand < 0.5) terrain = 'grass';
+            else if (rand < 0.8) terrain = 'forest';
+            else if (rand < 0.9) terrain = 'mountain';
+            else terrain = 'water';
+          }
+          
+          const items = [];
+          
+          if (!isHome && terrain !== 'water') {
+            const itemChance = terrain === 'forest' ? 0.4 : 0.25;
+            if (Math.random() < itemChance) {
+              const beanTypes = ['green_colombian', 'green_ethiopian', 'green_brazilian', 'green_kenyan'];
+              const fruitTypes = ['fruit_orange', 'fruit_berry', 'fruit_vanilla'];
+              const spiceTypes = ['spice_cinnamon', 'spice_cardamom'];
+              
+              const typeRand = Math.random();
+              let itemId;
+              
+              if (typeRand < 0.5) {
+                itemId = beanTypes[Math.floor(Math.random() * beanTypes.length)];
+              } else if (typeRand < 0.75) {
+                itemId = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+              } else {
+                itemId = spiceTypes[Math.floor(Math.random() * spiceTypes.length)];
+              }
+              
+              items.push(itemId);
+            }
+          }
+          
+          const isNearHome = Math.abs(x - HOME_POSITION.x) <= 1 && Math.abs(y - HOME_POSITION.y) <= 1;
+          
+          map[y][x] = {
+            position: { x, y },
+            isRevealed: isHome || isNearHome,
+            terrain,
+            items
+          };
+        }
+      }
+      
+      return map;
+    }
+    
+    // ============================================
+    // Game State - 游戏状态
+    // ============================================
+    
+    let gameState = {
+      gold: 100,
+      reputation: 0,
+      day: 1,
+      player: {
+        position: { ...HOME_POSITION },
+        isAtHome: true
+      },
+      inventory: [
+        { item: itemDatabase.green_colombian, count: 3 },
+        { item: itemDatabase.milk_whole, count: 2 },
+        { item: itemDatabase.spice_cinnamon, count: 1 }
+      ],
+      map: generateMap(),
+      currentCoffee: null
+    };
+    
+    function cloneState(state) {
+      return JSON.parse(JSON.stringify(state));
+    }
+    
+    // ============================================
+    // Event Bus - 事件总线
+    // ============================================
+    
+    const eventBus = {
+      subscriptions: {},
+      nextId: 0,
+      
+      on(event, callback) {
+        const id = this.nextId++;
+        if (!this.subscriptions[event]) {
+          this.subscriptions[event] = [];
+        }
+        this.subscriptions[event].push({ id, callback });
+        return id;
+      },
+      
+      off(id) {
+        for (const event in this.subscriptions) {
+          this.subscriptions[event] = this.subscriptions[event].filter(sub => sub.id !== id);
+        }
+      },
+      
+      emit(event, data) {
+        if (this.subscriptions[event]) {
+          this.subscriptions[event].forEach(sub => {
+            try {
+              sub.callback(data);
+            } catch (err) {
+              console.error(`Event error: ${event}`, err);
+            }
+          });
+        }
+      }
+    };
+    
+    const GameEvents = {
+      STATE_CHANGED: 'state:changed',
+      PLAYER_MOVED: 'player:moved',
+      ITEM_COLLECTED: 'item:collected',
+      MESSAGE: 'game:message'
+    };
+    
+    // ============================================
+    // Message Log - 消息日志
+    // ============================================
+    
+    const messageHistory = [];
+    const maxMessages = 50;
+    
+    function addMessage(message, type = 'info') {
+      messageHistory.push({ message, type, timestamp: Date.now() });
+      if (messageHistory.length > maxMessages) {
+        messageHistory.shift();
+      }
+      renderMessageLog();
+    }
+    
+    function renderMessageLog() {
+      const logEl = document.getElementById('message-log');
+      if (!logEl) return;
+      
+      logEl.innerHTML = '';
+      messageHistory.slice(-20).forEach(({ message, type }) => {
+        const msgEl = document.createElement('div');
+        msgEl.className = `message ${type}`;
+        msgEl.textContent = message;
+        logEl.appendChild(msgEl);
+      });
+      
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    // ============================================
+    // Map Logic - 地图逻辑
+    // ============================================
+    
+    function isPositionValid(pos) {
+      if (pos.x < 0 || pos.x >= MAP_WIDTH) return false;
+      if (pos.y < 0 || pos.y >= MAP_HEIGHT) return false;
+      return gameState.map[pos.y][pos.x].terrain !== 'water';
+    }
+    
+    function movePlayer(direction) {
+      const currentPos = gameState.player.position;
+      let newPos;
+      
+      switch (direction) {
+        case 'up':
+          newPos = { x: currentPos.x, y: currentPos.y - 1 };
+          break;
+        case 'down':
+          newPos = { x: currentPos.x, y: currentPos.y + 1 };
+          break;
+        case 'left':
+          newPos = { x: currentPos.x - 1, y: currentPos.y };
+          break;
+        case 'right':
+          newPos = { x: currentPos.x + 1, y: currentPos.y };
+          break;
+        default:
+          return false;
+      }
+      
+      if (!isPositionValid(newPos)) {
+        addMessage('无法移动到该位置！', 'warning');
+        return false;
+      }
+      
+      gameState.player.position = newPos;
+      gameState.player.isAtHome = newPos.x === HOME_POSITION.x && newPos.y === HOME_POSITION.y;
+      
+      const cell = gameState.map[newPos.y][newPos.x];
+      if (!cell.isRevealed) {
+        cell.isRevealed = true;
+        
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const revealPos = { x: newPos.x + dx, y: newPos.y + dy };
+            if (isPositionValid(revealPos)) {
+              gameState.map[revealPos.y][revealPos.x].isRevealed = true;
+            }
+          }
+        }
+      }
+      
+      const terrainName = terrainNames[cell.terrain];
+      const terrainIcon = terrainIcons[cell.terrain];
+      
+      if (gameState.player.isAtHome) {
+        addMessage(`${terrainIcon} 你回到了家中。可以在这里制作咖啡了！`, 'success');
+      } else {
+        addMessage(`移动到了 ${terrainIcon} ${terrainName}`);
+      }
+      
+      renderMap();
+      renderLocation();
+      renderCraftingPanel();
+      
+      return true;
+    }
+    
+    function goHome() {
+      if (gameState.player.isAtHome) {
+        addMessage('你已经在家中了！', 'warning');
+        return true;
+      }
+      
+      gameState.player.position = { ...HOME_POSITION };
+      gameState.player.isAtHome = true;
+      
+      addMessage('🏠 你使用传送回家了！', 'info');
+      
+      renderMap();
+      renderLocation();
+      renderCraftingPanel();
+      
+      return true;
+    }
+    
+    function collectItems() {
+      const pos = gameState.player.position;
+      const cell = gameState.map[pos.y][pos.x];
+      
+      if (!cell || cell.items.length === 0) {
+        addMessage('这里没有可采集的物品。', 'warning');
+        return [];
+      }
+      
+      const collected = [];
+      
+      cell.items.forEach(itemId => {
+        const item = itemDatabase[itemId];
+        if (item) {
+          addItemToInventory(itemId, 1);
+          collected.push(itemId);
+          addMessage(`✨ 采集到了 ${item.icon} ${item.name}！`, 'success');
+        }
+      });
+      
+      cell.items = [];
+      renderMap();
+      
+      return collected;
+    }
+    
+    function hasItemsAtCurrentPosition() {
+      const pos = gameState.player.position;
+      const cell = gameState.map[pos.y][pos.x];
+      return cell && cell.items.length > 0;
+    }
+    
+    // ============================================
+    // Inventory Logic - 背包逻辑
+    // ============================================
+    
+    function addItemToInventory(itemId, count = 1) {
+      const existing = gameState.inventory.find(i => i.item.id === itemId);
+      
+      if (existing) {
+        existing.count += count;
+      } else {
+        const item = itemDatabase[itemId];
+        if (item) {
+          gameState.inventory.push({ item, count });
+        }
+      }
+      
+      renderInventory();
+    }
+    
+    function removeItemFromInventory(itemId, count = 1) {
+      const existingIndex = gameState.inventory.findIndex(i => i.item.id === itemId);
+      
+      if (existingIndex >= 0) {
+        gameState.inventory[existingIndex].count -= count;
+        if (gameState.inventory[existingIndex].count <= 0) {
+          gameState.inventory.splice(existingIndex, 1);
+        }
+      }
+      
+      renderInventory();
+    }
+    
+    function hasItemOfType(type) {
+      return gameState.inventory.some(item => item.item.type === type);
+    }
+    
+    function getFirstItemOfType(type) {
+      return gameState.inventory.find(i => i.item.type === type) || null;
+    }
+    
+    // ============================================
+    // Crafting Logic - 制作逻辑
+    // ============================================
+    
+    function canCraft() {
+      return gameState.player.isAtHome;
+    }
+    
+    function roastGreenBean() {
+      if (!canCraft()) {
+        addMessage('需要回家才能烘焙！', 'warning');
+        return false;
+      }
+      
+      const greenBean = getFirstItemOfType('green_bean');
+      if (!greenBean) {
+        addMessage('没有生豆可以烘焙！', 'warning');
+        return false;
+      }
+      
+      removeItemFromInventory(greenBean.item.id, 1);
+      addItemToInventory('roasted_medium', 1);
+      
+      const roastedBean = itemDatabase.roasted_medium;
+      addMessage(`🔥 烘焙完成！${greenBean.item.name} → ${roastedBean.icon} ${roastedBean.name}`, 'success');
+      
+      renderCraftingPanel();
+      return true;
+    }
+    
+    function grindRoastedBean() {
+      if (!canCraft()) {
+        addMessage('需要回家才能研磨！', 'warning');
+        return false;
+      }
+      
+      const roastedBean = getFirstItemOfType('roasted_bean');
+      if (!roastedBean) {
+        addMessage('没有熟豆可以研磨！', 'warning');
+        return false;
+      }
+      
+      removeItemFromInventory(roastedBean.item.id, 1);
+      addItemToInventory('coffee_powder_medium', 1);
+      
+      const powder = itemDatabase.coffee_powder_medium;
+      addMessage(`⚙️ 研磨完成！${roastedBean.item.name} → ${powder.icon} ${powder.name}`, 'success');
+      
+      renderCraftingPanel();
+      return true;
+    }
+    
+    function brewCoffee() {
+      if (!canCraft()) {
+        addMessage('需要回家才能萃取！', 'warning');
+        return false;
+      }
+      
+      const powder = getFirstItemOfType('coffee_powder');
+      if (!powder) {
+        addMessage('没有咖啡粉可以萃取！', 'warning');
+        return false;
+      }
+      
+      removeItemFromInventory(powder.item.id, 1);
+      addItemToInventory('coffee_liquid_pour_over', 1);
+      
+      const liquid = itemDatabase.coffee_liquid_pour_over;
+      addMessage(`💧 萃取完成！${powder.item.name} → ${liquid.icon} ${liquid.name}`, 'success');
+      
+      renderCraftingPanel();
+      return true;
+    }
+    
+    function createFinishedCoffee() {
+      if (!canCraft()) {
+        addMessage('需要回家才能制作咖啡！', 'warning');
+        return false;
+      }
+      
+      const liquid = getFirstItemOfType('coffee_liquid');
+      if (!liquid) {
+        addMessage('没有咖啡液可以调和！', 'warning');
+        return false;
+      }
+      
+      const ingredients = [liquid.item];
+      const usedAdditives = [];
+      
+      const additiveTypes = ['fruit', 'spice', 'milk'];
+      for (const type of additiveTypes) {
+        const additive = getFirstItemOfType(type);
+        if (additive) {
+          ingredients.push(additive.item);
+          usedAdditives.push(additive);
+        }
+      }
+      
+      const allFlavors = [];
+      ingredients.forEach(item => {
+        item.flavors.forEach(flavor => {
+          const existing = allFlavors.find(f => f.name === flavor.name);
+          if (existing) {
+            existing.value += flavor.value;
+          } else {
+            allFlavors.push({ ...flavor });
+          }
+        });
+      });
+      
+      const positiveFlavors = allFlavors.filter(f => f.isPositive);
+      const negativeFlavors = allFlavors.filter(f => !f.isPositive);
+      
+      const positiveScore = positiveFlavors.reduce((sum, f) => sum + f.value, 0);
+      const negativeScore = negativeFlavors.reduce((sum, f) => sum + f.value, 0);
+      const totalScore = positiveScore - negativeScore;
+      
+      const basePrice = Math.max(10, liquid.item.baseValue + ingredients.slice(1).reduce((sum, i) => sum + i.baseValue * 0.5, 0));
+      const finalPrice = Math.floor(basePrice * (1 + totalScore * 0.1));
+      
+      const coffeeName = generateCoffeeName(ingredients, totalScore);
+      const coffeeDesc = generateCoffeeDescription(positiveFlavors, negativeFlavors);
+      
+      removeItemFromInventory(liquid.item.id, 1);
+      for (const additive of usedAdditives) {
+        removeItemFromInventory(additive.item.id, 1);
+      }
+      
+      gameState.currentCoffee = {
+        name: coffeeName,
+        description: coffeeDesc,
+        positiveFlavors,
+        negativeFlavors,
+        totalScore,
+        basePrice: finalPrice,
+        ingredients: ingredients.map(i => i.id)
+      };
+      
+      addMessage(`☕ 咖啡制作完成！${coffeeName} - 评分: ${totalScore}`, 'success');
+      
+      renderCraftingPanel();
+      renderCoffeeResult();
+      
+      return true;
+    }
+    
+    function generateCoffeeName(ingredients, score) {
+      const baseNames = ['浓缩', '拿铁', '美式', '卡布奇诺', '摩卡'];
+      const qualityPrefix = score >= 15 ? '精品' : score >= 10 ? '优质' : score >= 5 ? '普通' : '家常';
+      
+      const additives = ingredients.filter(i => i.type !== 'coffee_liquid');
+      let additiveName = '';
+      
+      if (additives.length > 0) {
+        const firstAdditive = additives[0];
+        if (firstAdditive.type === 'milk') {
+          additiveName = firstAdditive.name.includes('燕麦') ? '燕麦' : '奶香';
+        } else if (firstAdditive.type === 'fruit') {
+          if (firstAdditive.name.includes('香草')) additiveName = '香草';
+          else if (firstAdditive.name.includes('橙')) additiveName = '香橙';
+          else if (firstAdditive.name.includes('莓')) additiveName = '莓果';
+        } else if (firstAdditive.type === 'spice') {
+          if (firstAdditive.name.includes('肉桂')) additiveName = '肉桂';
+          else additiveName = '香料';
+        }
+      }
+      
+      const baseName = baseNames[Math.floor(Math.random() * baseNames.length)];
+      
+      if (additiveName) {
+        return `${qualityPrefix}${additiveName}${baseName}`;
+      }
+      return `${qualityPrefix}${baseName}`;
+    }
+    
+    function generateCoffeeDescription(positive, negative) {
+      const flavorNames = {
+        fruity: '果香',
+        floral: '花香',
+        sweet: '甜感',
+        nutty: '坚果',
+        chocolate: '巧克力',
+        spicy: '香料',
+        sour: '酸感',
+        bitter: '苦味',
+        burnt: '焦味',
+        watery: '淡味'
+      };
+      
+      const positiveDesc = positive
+        .filter(f => f.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 3)
+        .map(f => `${flavorNames[f.name]}(${f.value})`)
+        .join('、');
+      
+      const negativeDesc = negative
+        .filter(f => f.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 2)
+        .map(f => `${flavorNames[f.name]}(${f.value})`)
+        .join('、');
+      
+      let desc = '这是一杯';
+      if (positiveDesc) {
+        desc += `带有${positiveDesc}的咖啡`;
+      } else {
+        desc += '风味平淡的咖啡';
+      }
+      
+      if (negativeDesc) {
+        desc += `，但也有${negativeDesc}等缺点`;
+      }
+      
+      return desc + '。';
+    }
+    
+    function sellCurrentCoffee() {
+      if (!gameState.currentCoffee) {
+        addMessage('没有可售卖的咖啡！', 'warning');
+        return false;
+      }
+      
+      const coffee = gameState.currentCoffee;
+      const reputationGain = Math.floor(coffee.totalScore / 2);
+      
+      let feedback = '';
+      if (coffee.totalScore >= 15) {
+        feedback = '客人非常满意！';
+      } else if (coffee.totalScore >= 10) {
+        feedback = '客人评价不错！';
+      } else if (coffee.totalScore >= 5) {
+        feedback = '客人觉得一般。';
+      } else if (coffee.totalScore >= 0) {
+        feedback = '客人不太喜欢...';
+      } else {
+        feedback = '客人非常不满！';
+      }
+      
+      gameState.gold += coffee.basePrice;
+      gameState.reputation += Math.max(0, reputationGain);
+      gameState.currentCoffee = null;
+      
+      addMessage(`💰 售出 ${coffee.name}！获得 ${coffee.basePrice} 金币，${feedback}`, 'success');
+      
+      renderStats();
+      renderCraftingPanel();
+      renderCoffeeResult();
+      
+      return true;
+    }
+    
+    // ============================================
+    // Render Functions - 渲染函数
+    // ============================================
+    
+    function renderStats() {
+      const goldDisplay = document.getElementById('gold-display');
+      const reputationDisplay = document.getElementById('reputation-display');
+      const dayDisplay = document.getElementById('day-display');
+      
+      if (goldDisplay) goldDisplay.textContent = gameState.gold.toString();
+      if (reputationDisplay) reputationDisplay.textContent = gameState.reputation.toString();
+      if (dayDisplay) dayDisplay.textContent = gameState.day.toString();
+    }
+    
+    function renderLocation() {
+      const locationDisplay = document.getElementById('location-display');
+      const craftStatus = document.getElementById('craft-status');
+      
+      if (gameState.player.isAtHome) {
+        if (locationDisplay) locationDisplay.textContent = '🏠 家中';
+        if (craftStatus) {
+          craftStatus.textContent = '可以制作咖啡了！';
+          craftStatus.style.color = '#4ade80';
+        }
+      } else {
+        if (locationDisplay) locationDisplay.textContent = '🗺️ 探索中';
+        if (craftStatus) {
+          craftStatus.textContent = '需要回家才能制作';
+          craftStatus.style.color = '#888';
+        }
+      }
+    }
+    
+    function renderMap() {
+      const mapGrid = document.getElementById('map-grid');
+      if (!mapGrid) return;
+      
+      mapGrid.innerHTML = '';
+      mapGrid.style.gridTemplateColumns = `repeat(${MAP_WIDTH}, 40px)`;
+      
+      const itemsAtPlayer = gameState.map[gameState.player.position.y][gameState.player.position.x].items;
+      const hasItems = itemsAtPlayer.length > 0;
+      
+      for (let y = 0; y < MAP_HEIGHT; y++) {
+        for (let x = 0; x < MAP_WIDTH; x++) {
+          const cell = gameState.map[y][x];
+          const cellEl = document.createElement('div');
+          cellEl.className = 'map-cell';
+          
+          const isPlayer = gameState.player.position.x === x && gameState.player.position.y === y;
+          const isHome = cell.terrain === 'home';
+          
+          if (isPlayer) {
+            cellEl.classList.add('player');
+          } else if (!cell.isRevealed) {
+            cellEl.classList.add('fog');
+          } else if (isHome) {
+            cellEl.classList.add('home');
+          } else {
+            cellEl.classList.add('revealed');
+          }
+          
+          if (cell.isRevealed) {
+            if (isPlayer && hasItems) {
+              const firstItem = itemDatabase[itemsAtPlayer[0]];
+              cellEl.textContent = firstItem?.icon || '✨';
+            } else if (isPlayer) {
+              cellEl.textContent = '🧙';
+            } else if (isHome) {
+              cellEl.textContent = '🏠';
+            } else if (cell.items.length > 0) {
+              const firstItem = itemDatabase[cell.items[0]];
+              cellEl.textContent = firstItem?.icon || '✨';
+            } else {
+              cellEl.textContent = terrainIcons[cell.terrain];
+            }
+          } else {
+            cellEl.textContent = '?';
+          }
+          
+          cellEl.addEventListener('click', () => {
+            const playerPos = gameState.player.position;
+            const dx = x - playerPos.x;
+            const dy = y - playerPos.y;
+            
+            if (Math.abs(dx) + Math.abs(dy) === 1) {
+              if (dx === 1) movePlayer('right');
+              else if (dx === -1) movePlayer('left');
+              else if (dy === 1) movePlayer('down');
+              else if (dy === -1) movePlayer('up');
+            } else if (dx === 0 && dy === 0) {
+              if (hasItemsAtCurrentPosition()) {
+                collectItems();
+              }
+            }
+          });
+          
+          mapGrid.appendChild(cellEl);
+        }
+      }
+    }
+    
+    function renderInventory() {
+      const inventoryEl = document.getElementById('inventory');
+      if (!inventoryEl) return;
+      
+      inventoryEl.innerHTML = '';
+      
+      const items = gameState.inventory;
+      const maxSlots = 16;
+      
+      for (let i = 0; i < Math.max(items.length, maxSlots); i++) {
+        const slotEl = document.createElement('div');
+        slotEl.className = 'inventory-slot';
+        
+        if (i < items.length) {
+          const invItem = items[i];
+          slotEl.innerHTML = `
+            <span class="item-icon">${invItem.item.icon}</span>
+            ${invItem.count > 1 ? `<span class="item-count">${invItem.count}</span>` : ''}
+          `;
+          slotEl.title = `${invItem.item.name}: ${invItem.item.description}\n数量: ${invItem.count}\n价值: ${invItem.item.baseValue}`;
+          
+          slotEl.addEventListener('click', () => {
+            addMessage(`📦 ${invItem.item.icon} ${invItem.item.name}: ${invItem.item.description} (x${invItem.count})`);
+          });
+        }
+        
+        inventoryEl.appendChild(slotEl);
+      }
+    }
+    
+    function renderCraftingPanel() {
+      const atHome = gameState.player.isAtHome;
+      
+      const steps = [
+        { id: 'step-roast', type: 'green_bean', action: roastGreenBean },
+        { id: 'step-grind', type: 'roasted_bean', action: grindRoastedBean },
+        { id: 'step-brew', type: 'coffee_powder', action: brewCoffee },
+        { id: 'step-blend', type: 'coffee_liquid', action: createFinishedCoffee },
+      ];
+      
+      steps.forEach(({ id, type, action }) => {
+        const stepEl = document.getElementById(id);
+        if (!stepEl) return;
+        
+        const canDo = atHome && hasItemOfType(type);
+        stepEl.classList.toggle('disabled', !canDo);
+        
+        stepEl.onclick = () => {
+          if (canDo) action();
+        };
+      });
+      
+      const btnCraft = document.getElementById('btn-craft-coffee');
+      const btnSell = document.getElementById('btn-sell-coffee');
+      
+      if (btnCraft) {
+        btnCraft.disabled = !atHome || !hasItemOfType('coffee_liquid');
+        btnCraft.onclick = createFinishedCoffee;
+      }
+      
+      if (btnSell) {
+        btnSell.disabled = !atHome || !gameState.currentCoffee;
+        btnSell.onclick = sellCurrentCoffee;
+      }
+    }
+    
+    function renderCoffeeResult() {
+      const resultEl = document.getElementById('coffee-result');
+      const coffee = gameState.currentCoffee;
+      
+      if (!resultEl) return;
+      
+      if (!coffee) {
+        resultEl.style.display = 'none';
+        return;
+      }
+      
+      resultEl.style.display = 'block';
+      
+      const nameEl = document.getElementById('coffee-name');
+      const descEl = document.getElementById('coffee-description');
+      const positiveEl = document.getElementById('coffee-positive');
+      const negativeEl = document.getElementById('coffee-negative');
+      const scoreEl = document.getElementById('coffee-score');
+      
+      if (nameEl) nameEl.textContent = `☕ ${coffee.name}`;
+      if (descEl) descEl.textContent = coffee.description;
+      
+      const positiveScore = coffee.positiveFlavors.reduce((sum, f) => sum + f.value, 0);
+      const negativeScore = coffee.negativeFlavors.reduce((sum, f) => sum + f.value, 0);
+      
+      if (positiveEl) {
+        positiveEl.textContent = `+${positiveScore}`;
+        positiveEl.className = 'coffee-stat-value positive';
+      }
+      
+      if (negativeEl) {
+        negativeEl.textContent = `-${negativeScore}`;
+        negativeEl.className = 'coffee-stat-value negative';
+      }
+      
+      if (scoreEl) {
+        scoreEl.textContent = `${coffee.totalScore} (💰${coffee.basePrice})`;
+        scoreEl.className = coffee.totalScore >= 10 ? 'coffee-stat-value gold' : 
+                            coffee.totalScore >= 0 ? 'coffee-stat-value positive' : 
+                            'coffee-stat-value negative';
+      }
+    }
+    
+    function renderAll() {
+      renderStats();
+      renderMap();
+      renderInventory();
+      renderCraftingPanel();
+      renderCoffeeResult();
+      renderLocation();
+    }
+    
+    // ============================================
+    // Input Handling - 输入处理
+    // ============================================
+    
+    function handleKeyDown(e) {
+      const key = e.key.toLowerCase();
+      
+      switch (key) {
+        case 'arrowup':
+        case 'w':
+          movePlayer('up');
+          e.preventDefault();
+          break;
+        case 'arrowdown':
+        case 's':
+          movePlayer('down');
+          e.preventDefault();
+          break;
+        case 'arrowleft':
+        case 'a':
+          movePlayer('left');
+          e.preventDefault();
+          break;
+        case 'arrowright':
+        case 'd':
+          movePlayer('right');
+          e.preventDefault();
+          break;
+        case ' ':
+          if (hasItemsAtCurrentPosition()) {
+            collectItems();
+          } else {
+            addMessage('这里没有可采集的物品。', 'warning');
+          }
+          e.preventDefault();
+          break;
+        case 'h':
+          goHome();
+          break;
+        case '1':
+          if (gameState.player.isAtHome) roastGreenBean();
+          break;
+        case '2':
+          if (gameState.player.isAtHome) grindRoastedBean();
+          break;
+        case '3':
+          if (gameState.player.isAtHome) brewCoffee();
+          break;
+        case '4':
+          if (gameState.player.isAtHome) createFinishedCoffee();
+          break;
+        case 'e':
+        case 'enter':
+          if (gameState.currentCoffee) {
+            sellCurrentCoffee();
+          }
+          break;
+      }
+    }
+    
+    // ============================================
+    // Game Initialization - 游戏初始化
+    // ============================================
+    
+    function initGame() {
+      document.addEventListener('keydown', handleKeyDown);
+      
+      renderAll();
+      
+      addMessage('🎮 欢迎来到 CoffeeHunter！', 'success');
+      addMessage('使用 ↑↓←→ 或 WASD 移动角色');
+      addMessage('使用 空格键 采集物品');
+      addMessage('按 H 键快速回家');
+      addMessage('在家中可以制作咖啡并售卖！');
+    }
+    
+    window.CoffeeHunter = {
+      gameState,
+      itemDatabase,
+      addMessage,
+      addItemToInventory,
+      addGold: (amount) => {
+        gameState.gold += amount;
+        addMessage(`💰 获得 ${amount} 金币！`, 'success');
+        renderStats();
+      },
+      addTestItems: () => {
+        addItemToInventory('green_ethiopian', 5);
+        addItemToInventory('fruit_vanilla', 3);
+        addItemToInventory('milk_oat', 5);
+        addMessage('🎁 添加了测试物品！', 'success');
+      }
+    };
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initGame);
+    } else {
+      initGame();
+    }
+  </script>
+</body>
+</html>

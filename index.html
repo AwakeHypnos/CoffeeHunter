@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoffeeHunter - 咖啡猎人</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+    
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    #game-canvas {
+      flex: 1;
+      display: block;
+    }
+    
+    .ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+    
+    .ui-overlay > * {
+      pointer-events: auto;
+    }
+    
+    .status-bar {
+      background: rgba(26, 26, 46, 0.9);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e94560;
+    }
+    
+    .status-bar h1 {
+      color: #e94560;
+      font-size: 1.5rem;
+    }
+    
+    .player-stats {
+      display: flex;
+      gap: 30px;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stat-label {
+      color: #888;
+      font-size: 0.85rem;
+    }
+    
+    .stat-value {
+      color: #ffd700;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    
+    .game-scene {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+      padding: 20px;
+    }
+    
+    .main-area {
+      flex: 2;
+      background: rgba(30, 30, 50, 0.8);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid #333;
+    }
+    
+    .side-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .panel {
+      background: rgba(30, 30, 50, 0.8);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid #333;
+    }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 8px;
+    }
+    
+    .panel-title {
+      color: #e94560;
+      font-weight: bold;
+    }
+    
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .inventory-slot {
+      width: 50px;
+      height: 50px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #555;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .inventory-slot:hover {
+      border-color: #e94560;
+      background: rgba(233, 69, 96, 0.1);
+    }
+    
+    .inventory-slot .item-icon {
+      font-size: 1.5rem;
+    }
+    
+    .inventory-slot .item-count {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 0.7rem;
+      color: #ffd700;
+      font-weight: bold;
+    }
+    
+    .crafting-station {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .crafting-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .crafting-step:hover {
+      background: rgba(233, 69, 96, 0.2);
+    }
+    
+    .crafting-step.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .crafting-step-icon {
+      font-size: 1.5rem;
+    }
+    
+    .crafting-step-info {
+      flex: 1;
+    }
+    
+    .crafting-step-name {
+      font-weight: bold;
+      color: #e94560;
+    }
+    
+    .crafting-step-desc {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #e94560, #c73e54);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: rgba(100, 100, 100, 0.3);
+      color: #e0e0e0;
+      border: 1px solid #555;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(100, 100, 100, 0.5);
+    }
+    
+    .message-log {
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    
+    .message {
+      padding: 5px;
+      border-left: 3px solid #555;
+      margin-bottom: 5px;
+    }
+    
+    .message.info {
+      border-left-color: #4a9eff;
+      color: #4a9eff;
+    }
+    
+    .message.success {
+      border-left-color: #4ade80;
+      color: #4ade80;
+    }
+    
+    .message.warning {
+      border-left-color: #fbbf24;
+      color: #fbbf24;
+    }
+    
+    .message.error {
+      border-left-color: #ef4444;
+      color: #ef4444;
+    }
+    
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .map-grid {
+      display: grid;
+      gap: 2px;
+    }
+    
+    .map-cell {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .map-cell.fog {
+      background: rgba(50, 50, 70, 0.9);
+      color: rgba(100, 100, 120, 0.3);
+    }
+    
+    .map-cell.revealed {
+      background: rgba(60, 80, 60, 0.6);
+    }
+    
+    .map-cell.player {
+      background: rgba(233, 69, 96, 0.6);
+      box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+    }
+    
+    .map-cell.home {
+      background: rgba(100, 150, 200, 0.6);
+    }
+    
+    .map-cell:hover {
+      transform: scale(1.05);
+    }
+    
+    .controls-info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(26, 26, 46, 0.9);
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      border: 1px solid #444;
+    }
+    
+    .controls-info span {
+      color: #e94560;
+      font-weight: bold;
+    }
+    
+    .coffee-result {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(100, 150, 100, 0.2);
+      border-radius: 5px;
+      border: 1px solid #4a4;
+    }
+    
+    .coffee-result h3 {
+      color: #4ade80;
+      margin-bottom: 10px;
+    }
+    
+    .coffee-stats {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .coffee-stat {
+      text-align: center;
+    }
+    
+    .coffee-stat-label {
+      font-size: 0.75rem;
+      color: #888;
+    }
+    
+    .coffee-stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    .coffee-stat-value.positive {
+      color: #4ade80;
+    }
+    
+    .coffee-stat-value.negative {
+      color: #ef4444;
+    }
+    
+    .coffee-stat-value.gold {
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="status-bar">
+      <h1>☕ CoffeeHunter - 咖啡猎人</h1>
+      <div class="player-stats">
+        <div class="stat">
+          <span class="stat-label">💰 金币</span>
+          <span class="stat-value" id="gold-display">100</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">⭐ 声望</span>
+          <span class="stat-value" id="reputation-display">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">📅 天数</span>
+          <span class="stat-value" id="day-display">1</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">📍 位置</span>
+          <span class="stat-value" id="location-display">🏠 家中</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="game-scene">
+      <div class="main-area">
+        <div class="panel-header">
+          <span class="panel-title">🗺️ 探索地图</span>
+          <span id="exploration-mode" style="color: #888; font-size: 0.85rem;">模式: 探索</span>
+        </div>
+        <div class="map-container">
+          <div id="map-grid" class="map-grid"></div>
+          <div class="controls-info">
+            <span>↑↓←→</span> 或 <span>WASD</span> 移动 | <span>空格</span> 采集 | <span>H</span> 回家
+          </div>
+        </div>
+      </div>
+      
+      <div class="side-panel">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🎒 背包</span>
+            <span style="color: #888; font-size: 0.8rem;">点击物品查看详情</span>
+          </div>
+          <div id="inventory" class="inventory-grid"></div>
+        </div>
+        
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">⚗️ 咖啡制作工坊</span>
+            <span id="craft-status" style="color: #888; font-size: 0.8rem;">需要回家才能制作</span>
+          </div>
+          <div class="crafting-station">
+            <div id="step-roast" class="crafting-step disabled">
+              <span class="crafting-step-icon">🔥</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">烘焙</div>
+                <div class="crafting-step-desc">生豆 → 熟豆</div>
+              </div>
+            </div>
+            <div id="step-grind" class="crafting-step disabled">
+              <span class="crafting-step-icon">⚙️</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">研磨</div>
+                <div class="crafting-step-desc">熟豆 → 咖啡粉</div>
+              </div>
+            </div>
+            <div id="step-brew" class="crafting-step disabled">
+              <span class="crafting-step-icon">💧</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">萃取</div>
+                <div class="crafting-step-desc">咖啡粉 → 咖啡液</div>
+              </div>
+            </div>
+            <div id="step-blend" class="crafting-step disabled">
+              <span class="crafting-step-icon">🥛</span>
+              <div class="crafting-step-info">
+                <div class="crafting-step-name">调和</div>
+                <div class="crafting-step-desc">添加水果/香料</div>
+              </div>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-craft-coffee" class="btn btn-primary" disabled>☕ 制作咖啡</button>
+            <button id="btn-sell-coffee" class="btn btn-secondary" disabled>💰 售卖咖啡</button>
+          </div>
+          
+          <div id="coffee-result" class="coffee-result" style="display: none;">
+            <h3 id="coffee-name">拿铁咖啡</h3>
+            <p id="coffee-description">一杯精心制作的咖啡</p>
+            <div class="coffee-stats">
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">正面风味</div>
+                <div id="coffee-positive" class="coffee-stat-value positive">+15</div>
+              </div>
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">负面风味</div>
+                <div id="coffee-negative" class="coffee-stat-value negative">-5</div>
+              </div>
+              <div class="coffee-stat">
+                <div class="coffee-stat-label">总评分</div>
+                <div id="coffee-score" class="coffee-stat-value gold">10</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📜 事件日志</span>
+          </div>
+          <div id="message-log" class="message-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
