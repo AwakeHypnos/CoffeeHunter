@@ -161,8 +161,53 @@
       font-size: 0.8rem;
       color: var(--text-secondary);
     }
-    .map-card-rewards { font-size: 0.9rem; color: var(--accent-gold); }
-    .map-card-rewards span { margin-right: 15px; }
+    .map-card-discoveries {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+    .discovery-section {
+      margin-bottom: 8px;
+    }
+    .discovery-section:last-child {
+      margin-bottom: 0;
+    }
+    .discovery-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .discovery-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+    .discovery-item {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 6px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+    .discovery-item.known {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--success);
+    }
+    .discovery-item.danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+    .discovery-none {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    .discovery-unknown {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      opacity: 0.7;
+    }
     .start-explore-btn { margin-top: 3rem; padding: 15px 50px; font-size: 1.3rem; }
     .start-explore-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     /* 探索场景 */
@@ -406,6 +451,54 @@
       width: 100%;
     }
     .workstation-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .workstation-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .options-placeholder {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 5px;
+    }
+    .craft-option-btn {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid var(--border-color);
+      background: var(--bg-darker);
+      color: var(--text-primary);
+      text-align: left;
+    }
+    .craft-option-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: rgba(233, 69, 96, 0.1);
+      transform: translateY(-2px);
+    }
+    .craft-option-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .craft-option-btn .option-name {
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .craft-option-btn .option-desc {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+    .craft-option-btn .option-locked {
+      font-size: 0.7rem;
+      color: var(--danger);
+      margin-top: 3px;
+    }
     .arrow-connector { font-size: 2rem; color: var(--text-secondary); }
     .workshop-sidebar {
       width: 300px;
@@ -827,6 +920,9 @@
         <button class="btn btn-primary start-explore-btn" id="start-explore-btn" disabled onclick="Game.startExploration()">
           🚀 开始探索
         </button>
+        <button class="btn btn-secondary" style="margin-top: 15px;" onclick="Game.skipExploration()">
+          ⏭️ 跳过探索，直接进入工坊
+        </button>
       </div>
     </div>
     
@@ -911,9 +1007,9 @@
               <div class="workstation-slot" id="roast-slot">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入生豆</span>
               </div>
-              <button class="btn btn-secondary workstation-btn" id="roast-btn" onclick="Game.performRoast()" disabled>
-                开始烘焙
-              </button>
+              <div class="workstation-options" id="roast-options">
+                <div class="options-placeholder">放入生豆后选择烘焙程度</div>
+              </div>
             </div>
             <div class="arrow-connector">→</div>
             <div class="workstation">
@@ -923,9 +1019,9 @@
               <div class="workstation-slot" id="grind-slot">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入熟豆</span>
               </div>
-              <button class="btn btn-secondary workstation-btn" id="grind-btn" onclick="Game.performGrind()" disabled>
-                开始研磨
-              </button>
+              <div class="workstation-options" id="grind-options">
+                <div class="options-placeholder">放入熟豆后选择研磨粗细</div>
+              </div>
             </div>
             <div class="arrow-connector">→</div>
             <div class="workstation">
@@ -935,9 +1031,9 @@
               <div class="workstation-slot" id="brew-slot">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入咖啡粉</span>
               </div>
-              <button class="btn btn-secondary workstation-btn" id="brew-btn" onclick="Game.performBrew()" disabled>
-                开始萃取
-              </button>
+              <div class="workstation-options" id="brew-options">
+                <div class="options-placeholder">放入咖啡粉后选择萃取方式</div>
+              </div>
             </div>
             <div class="arrow-connector">→</div>
             <div class="workstation">
