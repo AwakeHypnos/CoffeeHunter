@@ -618,6 +618,173 @@
     /* 动画 */
     .fade-in { animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* 工具商店 */
+    .tool-shop-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .tool-shop-modal.hidden {
+      display: none;
+    }
+    
+    .tool-shop-container {
+      background: var(--bg-dark);
+      border: 2px solid var(--primary);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .tool-shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .tool-shop-title {
+      font-size: 1.8rem;
+      color: var(--primary);
+      font-weight: bold;
+    }
+    
+    .tool-shop-gold {
+      font-size: 1.2rem;
+      color: var(--accent-gold);
+      font-weight: bold;
+    }
+    
+    .tool-shop-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+    
+    .tool-shop-close:hover {
+      color: var(--primary);
+    }
+    
+    .tool-shop-items {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    .tool-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 15px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .tool-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+    }
+    
+    .tool-card.unlocked {
+      border-color: var(--success);
+      background: rgba(74, 222, 128, 0.05);
+    }
+    
+    .tool-card-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 12px;
+    }
+    
+    .tool-card-icon {
+      font-size: 2.5rem;
+    }
+    
+    .tool-card-info {
+      flex: 1;
+    }
+    
+    .tool-card-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 5px;
+    }
+    
+    .tool-card-price {
+      font-size: 0.9rem;
+    }
+    
+    .price-text {
+      color: var(--accent-gold);
+      font-weight: bold;
+    }
+    
+    .unlocked-text {
+      color: var(--success);
+      font-weight: bold;
+    }
+    
+    .tool-card-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    
+    .tool-card-unlocks {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 15px;
+    }
+    
+    .unlock-tag {
+      display: inline-block;
+      background: rgba(233, 69, 96, 0.2);
+      color: var(--primary);
+      padding: 3px 8px;
+      border-radius: 10px;
+      margin: 2px 3px;
+      font-size: 0.75rem;
+    }
+    
+    .tool-buy-btn {
+      width: 100%;
+      padding: 10px;
+      font-size: 0.9rem;
+    }
+    
+    .tool-buy-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .tool-shop-btn {
+      background: linear-gradient(135deg, #ffd700, #ffaa00);
+      color: #1a1a2e;
+    }
+    
+    .tool-shop-btn:hover {
+      background: linear-gradient(135deg, #ffdd44, #ffbb22);
+      transform: translateY(-2px);
+    }
+    
     /* 滚动条 */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg-dark); }
@@ -650,6 +817,7 @@
           <div class="stat"><span class="stat-icon">📅</span><span class="stat-value" id="menu-day">1</span></div>
         </div>
         <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small tool-shop-btn" onclick="Game.showToolShop()">🔧 工具商店</button>
           <button class="btn btn-secondary btn-small" onclick="Game.showScene('main-menu')">🏠 返回</button>
         </div>
       </div>
@@ -727,6 +895,7 @@
           <div class="stat"><span class="stat-icon">⭐</span><span class="stat-value" id="workshop-reputation">0</span></div>
         </div>
         <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small tool-shop-btn" onclick="Game.showToolShop()">🔧 工具商店</button>
           <button class="btn btn-secondary btn-small" onclick="Game.showScene('explore-scene')">🌲 去探索</button>
           <button class="btn btn-primary btn-small" onclick="Game.showScene('shop-scene')">🏪 去商店</button>
         </div>
@@ -863,6 +1032,7 @@
           <div class="stat"><span class="stat-icon">📅</span><span class="stat-value">第 <span id="shop-day">1</span> 天</span></div>
         </div>
         <div class="scene-buttons">
+          <button class="btn btn-secondary btn-small tool-shop-btn" onclick="Game.showToolShop()">🔧 工具商店</button>
           <button class="btn btn-secondary btn-small" onclick="Game.showScene('workshop-scene')">⚗️ 去制作</button>
           <button class="btn btn-primary btn-small" onclick="Game.nextDay()">⏭️ 下一天</button>
         </div>
@@ -913,6 +1083,20 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 工具商店弹窗 -->
+  <div id="tool-shop-modal" class="tool-shop-modal hidden">
+    <div class="tool-shop-container">
+      <div class="tool-shop-header">
+        <div class="tool-shop-title">🔧 工具商店</div>
+        <div class="tool-shop-gold">💰 <span id="tool-shop-gold">100</span></div>
+        <button class="tool-shop-close" onclick="Game.hideToolShop()">✕</button>
+      </div>
+      <div class="tool-shop-items" id="tool-shop-items">
+        <!-- 工具列表将由JS动态生成 -->
       </div>
     </div>
   </div>
