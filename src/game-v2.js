@@ -13,12 +13,16 @@ const Game = {
     selectedMap: null,
     currentScene: 'main-menu',
     tools: {
-      highTempRoaster: false, // 高温咖啡机（解锁深烘焙）
-      espressoMachine: false, // 高温压缩咖啡机（解锁意式浓缩）
-      fineGrinder: false, // 细研磨机（解锁细研磨）
-      advancedGrinder: false // 高级研磨机（解锁极细和极粗研磨）
+      highTempRoaster: false,
+      espressoMachine: false,
+      fineGrinder: false,
+      advancedGrinder: false
     },
-    exploredToday: false // 当天是否已经探索过
+    exploredToday: false,
+    discovered: {
+      items: new Set(),
+      dangers: new Set()
+    }
   },
   
   exploreState: {
@@ -818,12 +822,16 @@ const Game = {
       selectedMap: null,
       currentScene: 'main-menu',
       tools: {
-        highTempRoaster: false, // 高温咖啡机（解锁深烘焙）
-        espressoMachine: false, // 高温压缩咖啡机（解锁意式浓缩）
-        fineGrinder: false, // 细研磨机（解锁细研磨）
-        advancedGrinder: false // 高级研磨机（解锁极细和极粗研磨）
+        highTempRoaster: false,
+        espressoMachine: false,
+        fineGrinder: false,
+        advancedGrinder: false
       },
-      exploredToday: false // 当天是否已经探索过
+      exploredToday: false,
+      discovered: {
+        items: new Set(),
+        dangers: new Set()
+      }
     };
     
     this.craftState = {
@@ -886,6 +894,27 @@ const Game = {
       const difficultyText = map.difficulty === 'easy' ? '简单' : 
                              map.difficulty === 'medium' ? '中等' : '困难';
       
+      const knownItems = [];
+      const unknownItems = [];
+      Object.keys(map.itemWeights).forEach(itemId => {
+        const item = this.baseItems[itemId];
+        if (item) {
+          if (this.state.discovered.items.has(itemId)) {
+            knownItems.push(item);
+          } else {
+            unknownItems.push(item);
+          }
+        }
+      });
+      
+      const dangerTypes = [];
+      if (map.dangerLevel >= 1) dangerTypes.push('野生动物出没');
+      if (map.dangerLevel >= 2) dangerTypes.push('地形复杂');
+      if (map.dangerLevel >= 3) dangerTypes.push('恶劣天气');
+      
+      const knownDangers = dangerTypes.filter(d => this.state.discovered.dangers.has(d));
+      const unknownDangerCount = dangerTypes.length - knownDangers.length;
+      
       card.innerHTML = `
         <div class="map-card-header">
           <div class="map-card-name">${map.icon} ${map.name}</div>
@@ -895,9 +924,29 @@ const Game = {
         <div class="map-card-tags">
           ${map.tags.map(tag => `<span class="map-tag">${tag}</span>`).join('')}
         </div>
-        <div class="map-card-rewards">
-          <span>💰 ${map.rewards.gold}</span>
-          <span>⭐ ${map.rewards.reputation}</span>
+        <div class="map-card-discoveries">
+          <div class="discovery-section">
+            <div class="discovery-label">🎒 已知素材:</div>
+            <div class="discovery-items">
+              ${knownItems.length > 0 ? 
+                knownItems.map(item => `<span class="discovery-item known" title="${item.name}">${item.icon}</span>`).join('') :
+                '<span class="discovery-none">暂未发现</span>'
+              }
+              ${unknownItems.length > 0 ? `<span class="discovery-unknown">+${unknownItems.length}种未知</span>` : ''}
+            </div>
+          </div>
+          ${dangerTypes.length > 0 ? `
+          <div class="discovery-section">
+            <div class="discovery-label">⚠️ 已知危险:</div>
+            <div class="discovery-items">
+              ${knownDangers.length > 0 ? 
+                knownDangers.map(d => `<span class="discovery-item danger">${d}</span>`).join('') :
+                '<span class="discovery-none">暂未发现</span>'
+              }
+              ${unknownDangerCount > 0 ? `<span class="discovery-unknown">+${unknownDangerCount}种未知</span>` : ''}
+            </div>
+          </div>
+          ` : ''}
         </div>
       `;
       
@@ -923,6 +972,13 @@ const Game = {
     if (goldEl) goldEl.textContent = this.state.gold;
     if (repEl) repEl.textContent = this.state.reputation;
     if (dayEl) dayEl.textContent = this.state.day;
+  },
+
+  skipExploration() {
+    this.state.exploredToday = true;
+    this.addMessage('⏭️ 跳过今天的探索，直接进入工坊。');
+    this.addMessage('使用背包中已有的材料制作咖啡吧！');
+    this.showScene('workshop-scene');
   },
 
   // ============================================
@@ -1203,6 +1259,11 @@ const Game = {
     const cell = this.exploreState.map[newY][newX];
     
     if (cell.isDanger) {
+      const dangerType = '野生动物出没';
+      if (!this.state.discovered.dangers.has(dangerType)) {
+        this.state.discovered.dangers.add(dangerType);
+        this.addMessage(`📖 发现新危险: ${dangerType}！`, 'danger');
+      }
       this.addMessage('⚠️ 遇到野生动物！无法前往该位置。', 'danger');
       return;
     }
@@ -1247,6 +1308,12 @@ const Game = {
           this.state.inventory.push({ item: { ...item }, count: 1 });
         }
         this.exploreState.collectedItems++;
+        
+        if (!this.state.discovered.items.has(itemId)) {
+          this.state.discovered.items.add(itemId);
+          this.addMessage(`📖 发现新素材: ${item.icon} ${item.name}！`, 'success');
+        }
+        
         this.addMessage(`✨ 采集到了 ${item.icon} ${item.name}！`, 'success');
       }
     });
@@ -1400,8 +1467,8 @@ const Game = {
         }
         this.craftState.roastItem = item;
         this.craftState.roastLevel = null;
-        document.getElementById('roast-btn').disabled = false;
         this.updateSlotDisplay('roast-slot', item);
+        this.renderRoastOptions();
         this.addMessage(`🔥 将 ${item.icon} ${item.name} 放入烘焙装置`);
         this.addMessage(`   标签: ${item.tags.join(', ')}`);
         break;
@@ -1413,8 +1480,8 @@ const Game = {
         }
         this.craftState.grindItem = item;
         this.craftState.grindLevel = null;
-        document.getElementById('grind-btn').disabled = false;
         this.updateSlotDisplay('grind-slot', item);
+        this.renderGrindOptions();
         this.addMessage(`⚙️ 将 ${item.icon} ${item.name} 放入研磨装置`);
         this.addMessage(`   标签: ${item.tags.join(', ')}`);
         break;
@@ -1426,8 +1493,8 @@ const Game = {
         }
         this.craftState.brewItem = item;
         this.craftState.brewMethod = null;
-        document.getElementById('brew-btn').disabled = false;
         this.updateSlotDisplay('brew-slot', item);
+        this.renderBrewOptions();
         this.addMessage(`💧 将 ${item.icon} ${item.name} 放入萃取装置`);
         this.addMessage(`   标签: ${item.tags.join(', ')}`);
         break;
@@ -1541,127 +1608,202 @@ const Game = {
     });
   },
 
-  // 改进的烘焙系统：选择烘焙程度，保留原有标签
-  performRoast() {
+  renderRoastOptions() {
+    const container = document.getElementById('roast-options');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    this.roastLevels.forEach(roast => {
+      const isLocked = roast.requiredTool && !this.state.tools[roast.requiredTool];
+      const btn = document.createElement('button');
+      btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
+      btn.disabled = isLocked;
+      
+      btn.innerHTML = `
+        <div class="option-name">
+          ${roast.icon} ${roast.name}
+        </div>
+        <div class="option-desc">${roast.description}</div>
+        ${isLocked ? `<div class="option-locked">🔒 需要解锁对应工具</div>` : ''}
+      `;
+      
+      if (!isLocked) {
+        btn.onclick = () => this.performRoast(roast.id);
+      }
+      
+      container.appendChild(btn);
+    });
+  },
+
+  renderGrindOptions() {
+    const container = document.getElementById('grind-options');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    this.grindLevels.forEach(grind => {
+      const isLocked = grind.requiredTool && !this.state.tools[grind.requiredTool];
+      const btn = document.createElement('button');
+      btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
+      btn.disabled = isLocked;
+      
+      btn.innerHTML = `
+        <div class="option-name">
+          ${grind.icon} ${grind.name}
+        </div>
+        <div class="option-desc">${grind.description}</div>
+        ${isLocked ? `<div class="option-locked">🔒 需要解锁对应工具</div>` : ''}
+      `;
+      
+      if (!isLocked) {
+        btn.onclick = () => this.performGrind(grind.id);
+      }
+      
+      container.appendChild(btn);
+    });
+  },
+
+  renderBrewOptions() {
+    const container = document.getElementById('brew-options');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    this.brewMethods.forEach(brew => {
+      const isLocked = brew.requiredTool && !this.state.tools[brew.requiredTool];
+      const btn = document.createElement('button');
+      btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
+      btn.disabled = isLocked;
+      
+      btn.innerHTML = `
+        <div class="option-name">
+          ${brew.icon} ${brew.name}
+        </div>
+        <div class="option-desc">${brew.description}</div>
+        ${isLocked ? `<div class="option-locked">🔒 需要解锁对应工具</div>` : ''}
+      `;
+      
+      if (!isLocked) {
+        btn.onclick = () => this.performBrew(brew.id);
+      }
+      
+      container.appendChild(btn);
+    });
+  },
+
+  performRoast(roastLevelId) {
     if (!this.craftState.roastItem) {
       this.addMessage('请先放入生豆！', 'warning');
       return;
     }
     
-    const options = this.roastLevels.map(roast => {
-      const disabled = roast.requiredTool && !this.state.tools[roast.requiredTool];
-      return {
-        name: roast.name,
-        icon: roast.icon,
-        description: roast.description,
-        disabled: disabled,
-        disabledReason: disabled ? '需要解锁对应工具' : ''
-      };
-    });
+    const roast = this.roastLevels.find(r => r.id === roastLevelId);
+    if (!roast) {
+      this.addMessage('无效的烘焙程度！', 'warning');
+      return;
+    }
     
-    this.showOptionsDialog(`选择烘焙程度 - ${this.craftState.roastItem.name}`, options, (index) => {
-      const selectedRoast = this.roastLevels[index].id;
-      const roastedBean = this.createRoastedBean(this.craftState.roastItem, selectedRoast);
-      
-      this.state.inventory.push({ item: roastedBean, count: 1 });
-      
-      const roast = this.roastLevels[index];
-      
-      this.addMessage(`🔥 烘焙完成！`, 'success');
-      this.addMessage(`   ${this.craftState.roastItem.icon} ${this.craftState.roastItem.name} → ${roastedBean.icon} ${roastedBean.name}`);
-      this.addMessage(`   烘焙程度: ${roast.name}`);
-      this.addMessage(`   最终标签: ${roastedBean.tags.join(', ')}`);
-      
-      this.craftState.roastItem = null;
-      this.craftState.roastLevel = selectedRoast;
-      document.getElementById('roast-btn').disabled = true;
-      this.resetSlot('roast-slot', '点击放入生豆');
-      
-      this.updateCraftProgress(1);
-      this.renderWorkshopInventory();
-    });
+    if (roast.requiredTool && !this.state.tools[roast.requiredTool]) {
+      this.addMessage('需要解锁对应工具！', 'warning');
+      return;
+    }
+    
+    const roastedBean = this.createRoastedBean(this.craftState.roastItem, roastLevelId);
+    this.state.inventory.push({ item: roastedBean, count: 1 });
+    
+    this.addMessage(`🔥 烘焙完成！`, 'success');
+    this.addMessage(`   ${this.craftState.roastItem.icon} ${this.craftState.roastItem.name} → ${roastedBean.icon} ${roastedBean.name}`);
+    this.addMessage(`   烘焙程度: ${roast.name}`);
+    this.addMessage(`   最终标签: ${roastedBean.tags.join(', ')}`);
+    
+    this.craftState.roastItem = null;
+    this.craftState.roastLevel = roastLevelId;
+    this.resetSlot('roast-slot', '点击放入生豆');
+    
+    const roastContainer = document.getElementById('roast-options');
+    if (roastContainer) {
+      roastContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择烘焙程度</div>';
+    }
+    
+    this.updateCraftProgress(1);
+    this.renderWorkshopInventory();
   },
 
-  // 改进的研磨系统：选择研磨粗细，保留原有标签
-  performGrind() {
+  performGrind(grindLevelId) {
     if (!this.craftState.grindItem) {
       this.addMessage('请先放入熟豆！', 'warning');
       return;
     }
     
-    const options = this.grindLevels.map(grind => {
-      const disabled = grind.requiredTool && !this.state.tools[grind.requiredTool];
-      return {
-        name: grind.name,
-        icon: grind.icon,
-        description: grind.description,
-        disabled: disabled,
-        disabledReason: disabled ? '需要解锁对应工具' : ''
-      };
-    });
+    const grind = this.grindLevels.find(g => g.id === grindLevelId);
+    if (!grind) {
+      this.addMessage('无效的研磨粗细！', 'warning');
+      return;
+    }
     
-    this.showOptionsDialog(`选择研磨粗细 - ${this.craftState.grindItem.name}`, options, (index) => {
-      const selectedGrind = this.grindLevels[index].id;
-      const powder = this.createCoffeePowder(this.craftState.grindItem, selectedGrind);
-      
-      this.state.inventory.push({ item: powder, count: 1 });
-      
-      const grind = this.grindLevels[index];
-      
-      this.addMessage(`⚙️ 研磨完成！`, 'success');
-      this.addMessage(`   ${this.craftState.grindItem.icon} ${this.craftState.grindItem.name} → ${powder.icon} ${powder.name}`);
-      this.addMessage(`   研磨粗细: ${grind.name}`);
-      this.addMessage(`   最终标签: ${powder.tags.join(', ')}`);
-      
-      this.craftState.grindItem = null;
-      this.craftState.grindLevel = selectedGrind;
-      document.getElementById('grind-btn').disabled = true;
-      this.resetSlot('grind-slot', '点击放入熟豆');
-      
-      this.updateCraftProgress(2);
-      this.renderWorkshopInventory();
-    });
+    if (grind.requiredTool && !this.state.tools[grind.requiredTool]) {
+      this.addMessage('需要解锁对应工具！', 'warning');
+      return;
+    }
+    
+    const powder = this.createCoffeePowder(this.craftState.grindItem, grindLevelId);
+    this.state.inventory.push({ item: powder, count: 1 });
+    
+    this.addMessage(`⚙️ 研磨完成！`, 'success');
+    this.addMessage(`   ${this.craftState.grindItem.icon} ${this.craftState.grindItem.name} → ${powder.icon} ${powder.name}`);
+    this.addMessage(`   研磨粗细: ${grind.name}`);
+    this.addMessage(`   最终标签: ${powder.tags.join(', ')}`);
+    
+    this.craftState.grindItem = null;
+    this.craftState.grindLevel = grindLevelId;
+    this.resetSlot('grind-slot', '点击放入熟豆');
+    
+    const grindContainer = document.getElementById('grind-options');
+    if (grindContainer) {
+      grindContainer.innerHTML = '<div class="options-placeholder">放入熟豆后选择研磨粗细</div>';
+    }
+    
+    this.updateCraftProgress(2);
+    this.renderWorkshopInventory();
   },
 
-  // 改进的萃取系统：选择萃取方式，保留原有标签
-  performBrew() {
+  performBrew(brewMethodId) {
     if (!this.craftState.brewItem) {
       this.addMessage('请先放入咖啡粉！', 'warning');
       return;
     }
     
-    const options = this.brewMethods.map(brew => {
-      const disabled = brew.requiredTool && !this.state.tools[brew.requiredTool];
-      return {
-        name: brew.name,
-        icon: brew.icon,
-        description: brew.description,
-        disabled: disabled,
-        disabledReason: disabled ? '需要解锁对应工具' : ''
-      };
-    });
+    const brew = this.brewMethods.find(b => b.id === brewMethodId);
+    if (!brew) {
+      this.addMessage('无效的萃取方式！', 'warning');
+      return;
+    }
     
-    this.showOptionsDialog(`选择萃取方式 - ${this.craftState.brewItem.name}`, options, (index) => {
-      const selectedBrew = this.brewMethods[index].id;
-      const liquid = this.createCoffeeLiquid(this.craftState.brewItem, selectedBrew);
-      
-      this.state.inventory.push({ item: liquid, count: 1 });
-      
-      const brew = this.brewMethods[index];
-      
-      this.addMessage(`💧 萃取完成！`, 'success');
-      this.addMessage(`   ${this.craftState.brewItem.icon} ${this.craftState.brewItem.name} → ${liquid.icon} ${liquid.name}`);
-      this.addMessage(`   萃取方式: ${brew.name}`);
-      this.addMessage(`   最终标签: ${liquid.tags.join(', ')}`);
-      
-      this.craftState.brewItem = null;
-      this.craftState.brewMethod = selectedBrew;
-      document.getElementById('brew-btn').disabled = true;
-      this.resetSlot('brew-slot', '点击放入咖啡粉');
-      
-      this.updateCraftProgress(3);
-      this.renderWorkshopInventory();
-    });
+    if (brew.requiredTool && !this.state.tools[brew.requiredTool]) {
+      this.addMessage('需要解锁对应工具！', 'warning');
+      return;
+    }
+    
+    const liquid = this.createCoffeeLiquid(this.craftState.brewItem, brewMethodId);
+    this.state.inventory.push({ item: liquid, count: 1 });
+    
+    this.addMessage(`💧 萃取完成！`, 'success');
+    this.addMessage(`   ${this.craftState.brewItem.icon} ${this.craftState.brewItem.name} → ${liquid.icon} ${liquid.name}`);
+    this.addMessage(`   萃取方式: ${brew.name}`);
+    this.addMessage(`   最终标签: ${liquid.tags.join(', ')}`);
+    
+    this.craftState.brewItem = null;
+    this.craftState.brewMethod = brewMethodId;
+    this.resetSlot('brew-slot', '点击放入咖啡粉');
+    
+    const brewContainer = document.getElementById('brew-options');
+    if (brewContainer) {
+      brewContainer.innerHTML = '<div class="options-placeholder">放入咖啡粉后选择萃取方式</div>';
+    }
+    
+    this.updateCraftProgress(3);
+    this.renderWorkshopInventory();
   },
 
   // 改进的调和系统：根据所有原料和工艺动态生成咖啡
