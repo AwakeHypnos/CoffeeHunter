@@ -11,7 +11,14 @@ const Game = {
     inventory: [],
     coffeeStock: [],
     selectedMap: null,
-    currentScene: 'main-menu'
+    currentScene: 'main-menu',
+    tools: {
+      highTempRoaster: false, // 高温咖啡机（解锁深烘焙）
+      espressoMachine: false, // 高温压缩咖啡机（解锁意式浓缩）
+      fineGrinder: false, // 细研磨机（解锁细研磨）
+      advancedGrinder: false // 高级研磨机（解锁极细和极粗研磨）
+    },
+    exploredToday: false // 当天是否已经探索过
   },
   
   exploreState: {
@@ -190,7 +197,8 @@ const Game = {
       description: '浓郁的苦味和焦香，适合意式',
       tags: ['深烘', '苦味', '焦味'],
       removeTags: ['果香', '花香', '酸感'],
-      tagMultiplier: { '巧克力': 1.4, '坚果': 1.2, '苦味': 1.5 }
+      tagMultiplier: { '巧克力': 1.4, '坚果': 1.2, '苦味': 1.5 },
+      requiredTool: 'highTempRoaster'
     }
   ],
 
@@ -199,6 +207,15 @@ const Game = {
   // ============================================
   
   grindLevels: [
+    {
+      id: 'extra_coarse',
+      name: '极粗研磨',
+      icon: '🫘',
+      description: '适合冷萃、法压壶',
+      tags: ['极粗磨', '果香', '花香'],
+      tagMultiplier: { '果香': 1.3, '花香': 1.2 },
+      requiredTool: 'advancedGrinder'
+    },
     {
       id: 'coarse',
       name: '粗研磨',
@@ -221,7 +238,17 @@ const Game = {
       icon: '⚪',
       description: '适合意式浓缩、摩卡壶',
       tags: ['细磨', '巧克力', '苦味'],
-      tagMultiplier: { '巧克力': 1.3, '苦味': 1.3 }
+      tagMultiplier: { '巧克力': 1.3, '苦味': 1.3 },
+      requiredTool: 'fineGrinder'
+    },
+    {
+      id: 'extra_fine',
+      name: '极细研磨',
+      icon: '⚪',
+      description: '适合土耳其咖啡',
+      tags: ['极细磨', '浓郁', '苦味'],
+      tagMultiplier: { '巧克力': 1.5, '苦味': 1.5 },
+      requiredTool: 'advancedGrinder'
     }
   ],
 
@@ -236,7 +263,8 @@ const Game = {
       icon: '☕',
       description: '高压快速萃取，浓郁醇厚',
       tags: ['意式', '浓郁', '巧克力', '坚果'],
-      tagMultiplier: { '巧克力': 1.3, '坚果': 1.2, '苦味': 1.2 }
+      tagMultiplier: { '巧克力': 1.3, '坚果': 1.2, '苦味': 1.2 },
+      requiredTool: 'espressoMachine'
     },
     {
       id: 'pour_over',
@@ -315,6 +343,49 @@ const Game = {
   ],
 
   // ============================================
+  // 工具商店数据
+  // ============================================
+  
+  toolsShop: {
+    highTempRoaster: {
+      id: 'highTempRoaster',
+      name: '高温烘焙机',
+      icon: '🔥',
+      description: '可进行深度烘焙，释放咖啡豆的浓郁风味',
+      price: 200,
+      unlocks: ['深度烘焙'],
+      unlocked: false
+    },
+    espressoMachine: {
+      id: 'espressoMachine',
+      name: '意式浓缩机',
+      icon: '☕',
+      description: '高压快速萃取，制作浓郁的意式浓缩',
+      price: 300,
+      unlocks: ['意式浓缩'],
+      unlocked: false
+    },
+    fineGrinder: {
+      id: 'fineGrinder',
+      name: '细研磨机',
+      icon: '⚙️',
+      description: '可进行细研磨，适合意式浓缩和摩卡壶',
+      price: 150,
+      unlocks: ['细研磨'],
+      unlocked: false
+    },
+    advancedGrinder: {
+      id: 'advancedGrinder',
+      name: '高级研磨机',
+      icon: '🔧',
+      description: '专业级研磨机，支持极细和极粗研磨',
+      price: 400,
+      unlocks: ['极细研磨', '极粗研磨'],
+      unlocked: false
+    }
+  },
+
+  // ============================================
   // 客人数据
   // ============================================
   
@@ -327,7 +398,8 @@ const Game = {
         { tag: '果香', required: true },
         { tag: '花香', required: false }
       ],
-      basePrice: 50
+      basePrice: 50,
+      reputation: 10
     },
     {
       name: '上班族小红',
@@ -337,7 +409,8 @@ const Game = {
         { tag: '巧克力', required: true },
         { tag: '坚果', required: true }
       ],
-      basePrice: 60
+      basePrice: 60,
+      reputation: 15
     },
     {
       name: '退休老王',
@@ -347,7 +420,8 @@ const Game = {
         { tag: '巧克力', required: true },
         { tag: '苦味', required: false }
       ],
-      basePrice: 45
+      basePrice: 45,
+      reputation: 8
     },
     {
       name: '时尚博主',
@@ -358,7 +432,8 @@ const Game = {
         { tag: '花香', required: true },
         { tag: '特色', required: false }
       ],
-      basePrice: 80
+      basePrice: 80,
+      reputation: 20
     },
     {
       name: '健身教练',
@@ -368,7 +443,8 @@ const Game = {
         { tag: '健康', required: true },
         { tag: '谷物', required: false }
       ],
-      basePrice: 55
+      basePrice: 55,
+      reputation: 12
     },
     {
       name: '甜品控',
@@ -379,7 +455,8 @@ const Game = {
         { tag: '香草', required: true },
         { tag: '奶香', required: false }
       ],
-      basePrice: 70
+      basePrice: 70,
+      reputation: 18
     },
     {
       name: '探险家',
@@ -389,7 +466,8 @@ const Game = {
         { tag: '特色', required: true },
         { tag: '香料', required: true }
       ],
-      basePrice: 75
+      basePrice: 75,
+      reputation: 25
     },
     {
       name: '意式迷',
@@ -399,7 +477,8 @@ const Game = {
         { tag: '意式', required: true },
         { tag: '浓郁', required: false }
       ],
-      basePrice: 65
+      basePrice: 65,
+      reputation: 16
     },
     {
       name: '手冲达人',
@@ -409,7 +488,8 @@ const Game = {
         { tag: '手冲', required: true },
         { tag: '清晰', required: false }
       ],
-      basePrice: 70
+      basePrice: 70,
+      reputation: 14
     }
   ],
 
@@ -736,7 +816,14 @@ const Game = {
       ],
       coffeeStock: [],
       selectedMap: null,
-      currentScene: 'main-menu'
+      currentScene: 'main-menu',
+      tools: {
+        highTempRoaster: false, // 高温咖啡机（解锁深烘焙）
+        espressoMachine: false, // 高温压缩咖啡机（解锁意式浓缩）
+        fineGrinder: false, // 细研磨机（解锁细研磨）
+        advancedGrinder: false // 高级研磨机（解锁极细和极粗研磨）
+      },
+      exploredToday: false // 当天是否已经探索过
     };
     
     this.craftState = {
@@ -839,12 +926,109 @@ const Game = {
   },
 
   // ============================================
+  // 工具商店系统
+  // ============================================
+  
+  showToolShop() {
+    this.renderToolShop();
+    const toolShopModal = document.getElementById('tool-shop-modal');
+    if (toolShopModal) {
+      toolShopModal.classList.remove('hidden');
+    }
+  },
+  
+  hideToolShop() {
+    const toolShopModal = document.getElementById('tool-shop-modal');
+    if (toolShopModal) {
+      toolShopModal.classList.add('hidden');
+    }
+  },
+  
+  renderToolShop() {
+    const container = document.getElementById('tool-shop-items');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    Object.values(this.toolsShop).forEach(tool => {
+      const isUnlocked = this.state.tools[tool.id];
+      const canAfford = this.state.gold >= tool.price;
+      
+      const toolCard = document.createElement('div');
+      toolCard.className = `tool-card ${isUnlocked ? 'unlocked' : ''}`;
+      
+      toolCard.innerHTML = `
+        <div class="tool-card-header">
+          <div class="tool-card-icon">${tool.icon}</div>
+          <div class="tool-card-info">
+            <div class="tool-card-name">${tool.name}</div>
+            <div class="tool-card-price">
+              ${isUnlocked ? '<span class="unlocked-text">✓ 已解锁</span>' : `<span class="price-text">💰 ${tool.price}</span>`}
+            </div>
+          </div>
+        </div>
+        <div class="tool-card-desc">${tool.description}</div>
+        <div class="tool-card-unlocks">
+          <span>解锁功能: </span>
+          ${tool.unlocks.map(u => `<span class="unlock-tag">${u}</span>`).join(' ')}
+        </div>
+        ${!isUnlocked ? `
+          <button class="btn ${canAfford ? 'btn-primary' : 'btn-secondary'} tool-buy-btn" 
+                  onclick="Game.buyTool('${tool.id}')" 
+                  ${canAfford ? '' : 'disabled'}>
+            ${canAfford ? '🛒 购买' : '💰 金币不足'}
+          </button>
+        ` : ''}
+      `;
+      
+      container.appendChild(toolCard);
+    });
+    
+    const goldEl = document.getElementById('tool-shop-gold');
+    if (goldEl) goldEl.textContent = this.state.gold;
+  },
+  
+  buyTool(toolId) {
+    const tool = this.toolsShop[toolId];
+    if (!tool) {
+      this.addMessage('工具不存在！', 'warning');
+      return;
+    }
+    
+    if (this.state.tools[toolId]) {
+      this.addMessage('该工具已经解锁！', 'warning');
+      return;
+    }
+    
+    if (this.state.gold < tool.price) {
+      this.addMessage(`金币不足！需要 ${tool.price} 金币`, 'warning');
+      return;
+    }
+    
+    this.state.gold -= tool.price;
+    this.state.tools[toolId] = true;
+    this.toolsShop[toolId].unlocked = true;
+    
+    this.addMessage(`🎉 成功购买 ${tool.icon} ${tool.name}！`, 'success');
+    this.addMessage(`   解锁功能: ${tool.unlocks.join(', ')}`);
+    
+    this.renderToolShop();
+    this.updateMenuStats();
+    this.updateWorkshopStats();
+  },
+
+  // ============================================
   // 探索系统
   // ============================================
   
   startExploration() {
     if (!this.state.selectedMap) {
       this.addMessage('请先选择一个探索地区！', 'warning');
+      return;
+    }
+    
+    if (this.state.exploredToday) {
+      this.addMessage('今天已经探索过了！每天只能探索一次。', 'warning');
       return;
     }
     
@@ -1125,14 +1309,11 @@ const Game = {
   },
 
   exitExplore() {
-    const mapData = this.state.selectedMap;
-    this.state.gold += mapData.rewards.gold;
-    this.state.reputation += mapData.rewards.reputation;
-    
-    this.addMessage(`🎉 探索完成！获得 ${mapData.rewards.gold} 金币，${mapData.rewards.reputation} 声望`, 'success');
+    this.addMessage(`🎉 探索完成！`, 'success');
     this.addMessage(`本次采集了 ${this.exploreState.collectedItems} 个物品`);
-    this.addMessage('前往工坊制作咖啡吧！');
+    this.addMessage('前往工坊制作咖啡，然后卖给客人获取金币和声望！');
     
+    this.state.exploredToday = true;
     this.showScene('workshop-scene');
   },
 
@@ -1302,11 +1483,62 @@ const Game = {
     const display = document.getElementById('additives-display');
     if (display) {
       if (this.craftState.additives.length > 0) {
-        display.textContent = this.craftState.additives.map(a => a.icon).join(' ');
+        display.innerHTML = this.craftState.additives.map((a, index) => `
+          <span class="additive-item" onclick="Game.removeAdditive(${index})" title="点击移除 ${a.name}">
+            ${a.icon} ${a.name}
+          </span>
+        `).join(' ');
       } else {
         display.textContent = '无';
       }
     }
+  },
+
+  removeAdditive(index) {
+    if (index >= 0 && index < this.craftState.additives.length) {
+      const removedAdditive = this.craftState.additives[index];
+      this.craftState.additives.splice(index, 1);
+      this.updateAdditivesDisplay();
+      this.addMessage(`➖ 移除配料: ${removedAdditive.icon} ${removedAdditive.name}`);
+    }
+  },
+
+  // 显示操作选项弹窗
+  showOptionsDialog(title, options, callback) {
+    const dialog = document.createElement('div');
+    dialog.className = 'options-dialog';
+    dialog.innerHTML = `
+      <div class="dialog-content">
+        <h3>${title}</h3>
+        <div class="options-container">
+          ${options.map((option, index) => `
+            <button class="option-btn ${option.disabled ? 'disabled' : ''}" data-index="${index}" ${option.disabled ? 'disabled' : ''}>
+              ${option.icon || ''} ${option.name}
+              ${option.description ? `<small>${option.description}</small>` : ''}
+              ${option.disabled ? `<small class="disabled-reason">${option.disabledReason}</small>` : ''}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    dialog.querySelectorAll('.option-btn:not(.disabled)').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.index);
+        callback(index);
+        document.body.removeChild(dialog);
+      });
+    });
+    
+    dialog.querySelector('.dialog-content').addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    dialog.addEventListener('click', () => {
+      document.body.removeChild(dialog);
+    });
   },
 
   // 改进的烘焙系统：选择烘焙程度，保留原有标签
@@ -1316,32 +1548,38 @@ const Game = {
       return;
     }
     
-    const roastOptions = ['浅度烘焙', '中度烘焙', '深度烘焙'];
-    const roastIndex = prompt(`请选择烘焙程度 (输入数字):\n1. 浅度烘焙 - 保留果香花香，酸感明显\n2. 中度烘焙 - 平衡酸苦，甜感突出\n3. 深度烘焙 - 浓郁苦味，巧克力香\n\n当前豆子: ${this.craftState.roastItem.name}\n标签: ${this.craftState.roastItem.tags.join(', ')}`, '2');
+    const options = this.roastLevels.map(roast => {
+      const disabled = roast.requiredTool && !this.state.tools[roast.requiredTool];
+      return {
+        name: roast.name,
+        icon: roast.icon,
+        description: roast.description,
+        disabled: disabled,
+        disabledReason: disabled ? '需要解锁对应工具' : ''
+      };
+    });
     
-    let selectedRoast;
-    if (roastIndex === '1') selectedRoast = 'light';
-    else if (roastIndex === '3') selectedRoast = 'dark';
-    else selectedRoast = 'medium';
-    
-    const roastedBean = this.createRoastedBean(this.craftState.roastItem, selectedRoast);
-    
-    this.state.inventory.push({ item: roastedBean, count: 1 });
-    
-    const roast = this.roastLevels.find(r => r.id === selectedRoast);
-    
-    this.addMessage(`🔥 烘焙完成！`, 'success');
-    this.addMessage(`   ${this.craftState.roastItem.icon} ${this.craftState.roastItem.name} → ${roastedBean.icon} ${roastedBean.name}`);
-    this.addMessage(`   烘焙程度: ${roast.name}`);
-    this.addMessage(`   最终标签: ${roastedBean.tags.join(', ')}`);
-    
-    this.craftState.roastItem = null;
-    this.craftState.roastLevel = selectedRoast;
-    document.getElementById('roast-btn').disabled = true;
-    this.resetSlot('roast-slot', '点击放入生豆');
-    
-    this.updateCraftProgress(1);
-    this.renderWorkshopInventory();
+    this.showOptionsDialog(`选择烘焙程度 - ${this.craftState.roastItem.name}`, options, (index) => {
+      const selectedRoast = this.roastLevels[index].id;
+      const roastedBean = this.createRoastedBean(this.craftState.roastItem, selectedRoast);
+      
+      this.state.inventory.push({ item: roastedBean, count: 1 });
+      
+      const roast = this.roastLevels[index];
+      
+      this.addMessage(`🔥 烘焙完成！`, 'success');
+      this.addMessage(`   ${this.craftState.roastItem.icon} ${this.craftState.roastItem.name} → ${roastedBean.icon} ${roastedBean.name}`);
+      this.addMessage(`   烘焙程度: ${roast.name}`);
+      this.addMessage(`   最终标签: ${roastedBean.tags.join(', ')}`);
+      
+      this.craftState.roastItem = null;
+      this.craftState.roastLevel = selectedRoast;
+      document.getElementById('roast-btn').disabled = true;
+      this.resetSlot('roast-slot', '点击放入生豆');
+      
+      this.updateCraftProgress(1);
+      this.renderWorkshopInventory();
+    });
   },
 
   // 改进的研磨系统：选择研磨粗细，保留原有标签
@@ -1351,32 +1589,38 @@ const Game = {
       return;
     }
     
-    const grindOptions = ['粗研磨', '中研磨', '细研磨'];
-    const grindIndex = prompt(`请选择研磨粗细 (输入数字):\n1. 粗研磨 - 适合冷萃、法压壶，保留更多果香\n2. 中研磨 - 适合手冲、滴滤，平衡萃取\n3. 细研磨 - 适合意式浓缩，浓郁醇厚\n\n当前熟豆: ${this.craftState.grindItem.name}\n标签: ${this.craftState.grindItem.tags.join(', ')}`, '2');
+    const options = this.grindLevels.map(grind => {
+      const disabled = grind.requiredTool && !this.state.tools[grind.requiredTool];
+      return {
+        name: grind.name,
+        icon: grind.icon,
+        description: grind.description,
+        disabled: disabled,
+        disabledReason: disabled ? '需要解锁对应工具' : ''
+      };
+    });
     
-    let selectedGrind;
-    if (grindIndex === '1') selectedGrind = 'coarse';
-    else if (grindIndex === '3') selectedGrind = 'fine';
-    else selectedGrind = 'medium';
-    
-    const powder = this.createCoffeePowder(this.craftState.grindItem, selectedGrind);
-    
-    this.state.inventory.push({ item: powder, count: 1 });
-    
-    const grind = this.grindLevels.find(g => g.id === selectedGrind);
-    
-    this.addMessage(`⚙️ 研磨完成！`, 'success');
-    this.addMessage(`   ${this.craftState.grindItem.icon} ${this.craftState.grindItem.name} → ${powder.icon} ${powder.name}`);
-    this.addMessage(`   研磨粗细: ${grind.name}`);
-    this.addMessage(`   最终标签: ${powder.tags.join(', ')}`);
-    
-    this.craftState.grindItem = null;
-    this.craftState.grindLevel = selectedGrind;
-    document.getElementById('grind-btn').disabled = true;
-    this.resetSlot('grind-slot', '点击放入熟豆');
-    
-    this.updateCraftProgress(2);
-    this.renderWorkshopInventory();
+    this.showOptionsDialog(`选择研磨粗细 - ${this.craftState.grindItem.name}`, options, (index) => {
+      const selectedGrind = this.grindLevels[index].id;
+      const powder = this.createCoffeePowder(this.craftState.grindItem, selectedGrind);
+      
+      this.state.inventory.push({ item: powder, count: 1 });
+      
+      const grind = this.grindLevels[index];
+      
+      this.addMessage(`⚙️ 研磨完成！`, 'success');
+      this.addMessage(`   ${this.craftState.grindItem.icon} ${this.craftState.grindItem.name} → ${powder.icon} ${powder.name}`);
+      this.addMessage(`   研磨粗细: ${grind.name}`);
+      this.addMessage(`   最终标签: ${powder.tags.join(', ')}`);
+      
+      this.craftState.grindItem = null;
+      this.craftState.grindLevel = selectedGrind;
+      document.getElementById('grind-btn').disabled = true;
+      this.resetSlot('grind-slot', '点击放入熟豆');
+      
+      this.updateCraftProgress(2);
+      this.renderWorkshopInventory();
+    });
   },
 
   // 改进的萃取系统：选择萃取方式，保留原有标签
@@ -1386,32 +1630,38 @@ const Game = {
       return;
     }
     
-    const brewOptions = ['意式浓缩', '手冲', '冷萃'];
-    const brewIndex = prompt(`请选择萃取方式 (输入数字):\n1. 意式浓缩 - 高压快速萃取，浓郁醇厚\n2. 手冲 - 逐层注水，风味清晰\n3. 冷萃 - 低温浸泡，低酸顺滑\n\n当前咖啡粉: ${this.craftState.brewItem.name}\n标签: ${this.craftState.brewItem.tags.join(', ')}`, '2');
+    const options = this.brewMethods.map(brew => {
+      const disabled = brew.requiredTool && !this.state.tools[brew.requiredTool];
+      return {
+        name: brew.name,
+        icon: brew.icon,
+        description: brew.description,
+        disabled: disabled,
+        disabledReason: disabled ? '需要解锁对应工具' : ''
+      };
+    });
     
-    let selectedBrew;
-    if (brewIndex === '1') selectedBrew = 'espresso';
-    else if (brewIndex === '3') selectedBrew = 'cold_brew';
-    else selectedBrew = 'pour_over';
-    
-    const liquid = this.createCoffeeLiquid(this.craftState.brewItem, selectedBrew);
-    
-    this.state.inventory.push({ item: liquid, count: 1 });
-    
-    const brew = this.brewMethods.find(b => b.id === selectedBrew);
-    
-    this.addMessage(`💧 萃取完成！`, 'success');
-    this.addMessage(`   ${this.craftState.brewItem.icon} ${this.craftState.brewItem.name} → ${liquid.icon} ${liquid.name}`);
-    this.addMessage(`   萃取方式: ${brew.name}`);
-    this.addMessage(`   最终标签: ${liquid.tags.join(', ')}`);
-    
-    this.craftState.brewItem = null;
-    this.craftState.brewMethod = selectedBrew;
-    document.getElementById('brew-btn').disabled = true;
-    this.resetSlot('brew-slot', '点击放入咖啡粉');
-    
-    this.updateCraftProgress(3);
-    this.renderWorkshopInventory();
+    this.showOptionsDialog(`选择萃取方式 - ${this.craftState.brewItem.name}`, options, (index) => {
+      const selectedBrew = this.brewMethods[index].id;
+      const liquid = this.createCoffeeLiquid(this.craftState.brewItem, selectedBrew);
+      
+      this.state.inventory.push({ item: liquid, count: 1 });
+      
+      const brew = this.brewMethods[index];
+      
+      this.addMessage(`💧 萃取完成！`, 'success');
+      this.addMessage(`   ${this.craftState.brewItem.icon} ${this.craftState.brewItem.name} → ${liquid.icon} ${liquid.name}`);
+      this.addMessage(`   萃取方式: ${brew.name}`);
+      this.addMessage(`   最终标签: ${liquid.tags.join(', ')}`);
+      
+      this.craftState.brewItem = null;
+      this.craftState.brewMethod = selectedBrew;
+      document.getElementById('brew-btn').disabled = true;
+      this.resetSlot('brew-slot', '点击放入咖啡粉');
+      
+      this.updateCraftProgress(3);
+      this.renderWorkshopInventory();
+    });
   },
 
   // 改进的调和系统：根据所有原料和工艺动态生成咖啡
@@ -1574,6 +1824,7 @@ const Game = {
         <div class="customer-reward">
           <div class="reward-info">
             <div class="reward-item"><span>💰</span> ${customer.basePrice}起</div>
+            <div class="reward-item"><span>⭐</span> ${customer.reputation}</div>
           </div>
         </div>
       `;
@@ -1728,9 +1979,38 @@ const Game = {
     this.shopState.incomeToday += price;
     this.shopState.soldToday++;
     
+    let reputationGain = 0;
     if (this.allRequiredMet) {
-      this.state.reputation += 5;
+      // 完美匹配，获得全部声望
+      reputationGain = customer.reputation;
+      this.addMessage(`⭐ 完美匹配！获得 ${reputationGain} 声望值`, 'success');
+    } else {
+      // 不完美匹配，根据匹配程度计算声望
+      let requiredMatch = 0;
+      let optionalMatch = 0;
+      let totalRequired = 0;
+      
+      customer.demands.forEach(demand => {
+        const matches = coffee.tags.includes(demand.tag);
+        if (demand.required) {
+          totalRequired++;
+          if (matches) requiredMatch++;
+        } else {
+          if (matches) optionalMatch++;
+        }
+      });
+      
+      // 计算声望值：必需需求匹配权重更高
+      reputationGain = Math.floor((requiredMatch / totalRequired) * customer.reputation * 0.6 + 
+                                (optionalMatch / (customer.demands.length - totalRequired || 1)) * customer.reputation * 0.4);
+      if (reputationGain > 0) {
+        this.addMessage(`⭐ 部分匹配！获得 ${reputationGain} 声望值`, 'info');
+      } else {
+        this.addMessage(`⚠️ 匹配度太低，未获得声望值`, 'warning');
+      }
     }
+    
+    this.state.reputation += reputationGain;
     
     const coffeeIndex = this.state.coffeeStock.findIndex(c => c.id === coffee.id);
     if (coffeeIndex >= 0) {
@@ -1777,6 +2057,7 @@ const Game = {
     }
     
     this.state.day++;
+    this.state.exploredToday = false;
     this.shopState.soldToday = 0;
     this.shopState.incomeToday = 0;
     this.shopState.customers = [];
