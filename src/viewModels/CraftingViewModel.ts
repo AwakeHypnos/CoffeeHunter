@@ -1,7 +1,7 @@
 import { Item, FinishedCoffee, FlavorProfile, CraftingStep, ProcessMethod } from '../models/types';
 import { gameVM } from './GameViewModel';
 import { cloneGameState, addItemToInventory, removeItemFromInventory, getFirstItemOfType, hasItemOfType, getItemCount } from '../models/gameState';
-import { itemDatabase, roastProfiles, grindSettings, brewingMethods, processMethods, getItemById } from '../models/itemDatabase';
+import { roastProfiles, grindSettings, brewingMethods, processMethods, getItemById } from '../models/itemDatabase';
 import { eventBus, GameEvents } from '../utils/eventBus';
 
 export class CraftingViewModel {
@@ -151,17 +151,10 @@ export class CraftingViewModel {
 
     const processMethod = processMethods[Math.min(processMethodIndex, processMethods.length - 1)];
     
-    gameVM.updateState(s => {
-      let newState = removeItemFromInventory(s, greenBeanItem.item.id, actualCount);
-      newState = addItemToInventory(newState, greenBeanItem.item.id, actualCount);
-      return newState;
-    });
-
-    gameVM.logMessage(`🔬 预处理完成！使用${processMethod.name}处理了 ${actualCount} 个 ${greenBeanItem.item.name}`, 'success');
-    gameVM.logMessage(`   效果: ${processMethod.description}`, 'info');
-    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'process_ready', result: greenBeanItem.item.id, count: actualCount });
+    gameVM.logMessage(`⚠️ 预处理功能在 TypeScript 版本中尚未完全实现`, 'warning');
+    gameVM.logMessage(`   请使用 game-v2.js 版本进行游戏`);
     
-    return true;
+    return false;
   }
 
   public roastGreenBean(roastProfileIndex: number = 1, count: number = 1): boolean {

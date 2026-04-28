@@ -1,4 +1,5 @@
-import { MapCell, Position, getRandomItem } from './itemDatabase';
+import { MapCell, Position } from './types';
+import { getRandomItem } from './itemDatabase';
 
 export const MAP_WIDTH = 15;
 export const MAP_HEIGHT = 11;

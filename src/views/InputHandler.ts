@@ -64,7 +64,6 @@ export class InputHandler {
 
   private startInputLoop(): void {
     const loop = (currentTime: number) => {
-      const deltaTime = currentTime - this.lastFrameTime;
       this.lastFrameTime = currentTime;
 
       this.keyStates.forEach((state, key) => {
