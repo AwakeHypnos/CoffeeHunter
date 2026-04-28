@@ -1670,7 +1670,7 @@ const Game = {
   // ============================================
   
   showScene(sceneId) {
-    const scenes = ['main-menu', 'map-select-scene', 'explore-scene', 'workshop-scene', 'shop-scene'];
+    const scenes = ['main-menu', 'map-select-scene', 'explore-scene', 'processing-scene', 'workshop-scene', 'shop-scene'];
     scenes.forEach(id => {
       document.getElementById(id).classList.add('hidden');
     });
@@ -1695,10 +1695,16 @@ const Game = {
         this.renderExploreMap();
         this.renderExploreInventory();
         break;
+      case 'processing-scene':
+        this.renderProcessingInventory();
+        this.updateProcessingStats();
+        this.renderProcessingOptions();
+        break;
       case 'workshop-scene':
         this.renderWorkshopInventory();
         this.renderCoffeeInventory();
         this.updateWorkshopStats();
+        this.renderAdditivesOptions();
         break;
       case 'shop-scene':
         this.generateCustomers();
@@ -1748,15 +1754,15 @@ const Game = {
     };
     
     this.craftState = {
-      processItem: null,
+      processItems: [],
       processMethod: null,
-      roastItem: null,
+      roastItems: [],
       roastLevel: null,
-      grindItem: null,
+      grindItems: [],
       grindLevel: null,
-      brewItem: null,
+      brewItems: [],
       brewMethod: null,
-      blendItem: null,
+      blendItems: [],
       additives: [],
       currentStep: 0,
       finishedCoffee: null
@@ -2494,216 +2500,521 @@ const Game = {
     });
   },
 
-  putInSlot(slotType) {
-    let hasItemInSlot = false;
-    switch (slotType) {
-      case 'roast':
-        hasItemInSlot = !!this.craftState.roastItem;
-        break;
-      case 'grind':
-        hasItemInSlot = !!this.craftState.grindItem;
-        break;
-      case 'brew':
-        hasItemInSlot = !!this.craftState.brewItem;
-        break;
-      case 'blend':
-        hasItemInSlot = !!this.craftState.blendItem;
-        break;
-    }
-    
-    if (hasItemInSlot) {
-      this.removeFromSlot(slotType);
-      return;
-    }
-    
+  putInSlot(slotType, count = 1) {
     if (this.selectedWorkshopItem === null) {
       this.addMessage('请先从背包中选择一个物品', 'warning');
       return;
     }
     
     const invItem = this.state.inventory[this.selectedWorkshopItem];
+    if (!invItem) {
+      this.addMessage('物品不存在！', 'warning');
+      return;
+    }
+    
     const item = invItem.item;
+    const maxSlotCapacity = 10;
+    let itemsArray = null;
+    let slotId = '';
+    let placeholder = '';
+    let requiredType = '';
+    let renderOptions = null;
     
     switch (slotType) {
+      case 'process':
+        itemsArray = this.craftState.processItems;
+        slotId = 'processing-slot';
+        placeholder = '点击放入生豆';
+        requiredType = 'green_bean';
+        renderOptions = () => this.renderProcessingOptions();
+        break;
       case 'roast':
-        if (item.type !== 'green_bean') {
-          this.addMessage('烘焙需要生咖啡豆！', 'warning');
-          return;
-        }
-        this.craftState.roastItem = item;
-        this.craftState.roastLevel = null;
-        this.updateSlotDisplay('roast-slot', item);
-        this.renderRoastOptions();
-        this.addMessage(`🔥 将 ${item.icon} ${item.name} 放入烘焙装置`);
-        this.addMessage(`   标签: ${item.tags.join(', ')}`);
+        itemsArray = this.craftState.roastItems;
+        slotId = 'roast-slot';
+        placeholder = '点击放入生豆';
+        requiredType = 'green_bean';
+        renderOptions = () => this.renderRoastOptions();
         break;
-        
       case 'grind':
-        if (item.type !== 'roasted_bean') {
-          this.addMessage('研磨需要熟咖啡豆！', 'warning');
-          return;
-        }
-        this.craftState.grindItem = item;
-        this.craftState.grindLevel = null;
-        this.updateSlotDisplay('grind-slot', item);
-        this.renderGrindOptions();
-        this.addMessage(`⚙️ 将 ${item.icon} ${item.name} 放入研磨装置`);
-        this.addMessage(`   标签: ${item.tags.join(', ')}`);
+        itemsArray = this.craftState.grindItems;
+        slotId = 'grind-slot';
+        placeholder = '点击放入熟豆';
+        requiredType = 'roasted_bean';
+        renderOptions = () => this.renderGrindOptions();
         break;
-        
       case 'brew':
-        if (item.type !== 'coffee_powder') {
-          this.addMessage('萃取需要咖啡粉！', 'warning');
-          return;
-        }
-        this.craftState.brewItem = item;
-        this.craftState.brewMethod = null;
-        this.updateSlotDisplay('brew-slot', item);
-        this.renderBrewOptions();
-        this.addMessage(`💧 将 ${item.icon} ${item.name} 放入萃取装置`);
-        this.addMessage(`   标签: ${item.tags.join(', ')}`);
+        itemsArray = this.craftState.brewItems;
+        slotId = 'brew-slot';
+        placeholder = '点击放入咖啡粉';
+        requiredType = 'coffee_powder';
+        renderOptions = () => this.renderBrewOptions();
         break;
-        
       case 'blend':
         if (item.type === 'coffee_liquid') {
-          this.craftState.blendItem = item;
-          this.updateSlotDisplay('blend-slot', item);
-          this.addMessage(`🥛 将 ${item.icon} ${item.name} 放入调和装置`);
-          this.addMessage(`   标签: ${item.tags.join(', ')}`);
+          itemsArray = this.craftState.blendItems;
+          slotId = 'blend-slot';
+          placeholder = '点击放入咖啡液';
+          requiredType = 'coffee_liquid';
+          renderOptions = null;
         } else if (item.type === 'additive') {
           if (this.craftState.additives.length >= 3) {
             this.addMessage('最多只能添加3种配料！', 'warning');
             return;
           }
-          this.craftState.additives.push(item);
-          this.updateAdditivesDisplay();
-          this.addMessage(`➕ 添加配料: ${item.icon} ${item.name}`);
-          this.addMessage(`   标签: ${item.tags.join(', ')}`);
+          const actualCount = Math.min(count, invItem.count);
+          for (let i = 0; i < actualCount; i++) {
+            this.craftState.additives.push({ ...item });
+          }
+          this.renderAdditivesOptions();
+          this.addMessage(`➕ 添加配料: ${item.icon} ${item.name} x${actualCount}`);
+          
+          invItem.count -= actualCount;
+          if (invItem.count <= 0) {
+            this.state.inventory.splice(this.selectedWorkshopItem, 1);
+            this.selectedWorkshopItem = null;
+          }
+          this.renderWorkshopInventory();
+          return;
         } else {
           this.addMessage('调和需要咖啡液或配料！', 'warning');
           return;
         }
-        if (this.craftState.blendItem) {
-          document.getElementById('blend-btn').disabled = false;
-        }
         break;
     }
     
-    invItem.count--;
+    if (requiredType && item.type !== requiredType) {
+      const typeNames = {
+        'green_bean': '生咖啡豆',
+        'roasted_bean': '熟咖啡豆',
+        'coffee_powder': '咖啡粉',
+        'coffee_liquid': '咖啡液'
+      };
+      this.addMessage(`需要${typeNames[requiredType] || requiredType}！`, 'warning');
+      return;
+    }
+    
+    const actualCount = Math.min(count, invItem.count, maxSlotCapacity - itemsArray.length);
+    if (actualCount <= 0) {
+      if (itemsArray.length >= maxSlotCapacity) {
+        this.addMessage(`槽位已满！最多放入 ${maxSlotCapacity} 个物品`, 'warning');
+      }
+      return;
+    }
+    
+    for (let i = 0; i < actualCount; i++) {
+      itemsArray.push({ ...item });
+    }
+    
+    this.updateSlotDisplayMultiple(slotId, itemsArray, placeholder);
+    if (renderOptions) renderOptions();
+    
+    const slotNames = {
+      'process': '预处理装置',
+      'roast': '烘焙装置',
+      'grind': '研磨装置',
+      'brew': '萃取装置',
+      'blend': '调和装置'
+    };
+    this.addMessage(`📦 将 ${item.icon} ${item.name} x${actualCount} 放入${slotNames[slotType]}`);
+    
+    invItem.count -= actualCount;
     if (invItem.count <= 0) {
       this.state.inventory.splice(this.selectedWorkshopItem, 1);
       this.selectedWorkshopItem = null;
     }
     
+    this.updateSlotCounts();
     this.renderWorkshopInventory();
   },
 
-  updateSlotDisplay(slotId, item) {
+  updateSlotDisplayMultiple(slotId, itemsArray, placeholder) {
     const slot = document.getElementById(slotId);
-    if (slot) {
-      slot.classList.add('has-item');
+    if (!slot) return;
+    
+    if (itemsArray.length === 0) {
+      slot.classList.remove('has-item');
+      slot.innerHTML = `<span style="color: var(--text-secondary); font-size: 0.8rem;">${placeholder}</span>`;
+      return;
+    }
+    
+    slot.classList.add('has-item');
+    
+    if (itemsArray.length === 1) {
+      const item = itemsArray[0];
       slot.innerHTML = `
         <div class="workstation-item" title="点击取出物品">
           <span class="workstation-item-icon">${item.icon}</span>
           <span class="workstation-item-name">${item.name}</span>
         </div>
       `;
+    } else {
+      const uniqueItems = {};
+      itemsArray.forEach(item => {
+        if (uniqueItems[item.id]) {
+          uniqueItems[item.id].count++;
+        } else {
+          uniqueItems[item.id] = { item: item, count: 1 };
+        }
+      });
+      
+      const displayItems = Object.values(uniqueItems);
+      slot.innerHTML = `
+        <div class="workstation-item" title="点击取出物品">
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;">
+            ${displayItems.slice(0, 4).map(({ item, count }) => `
+              <span style="font-size: 1.2rem;" title="${item.name} x${count}">${item.icon}</span>
+            `).join('')}
+          </div>
+          <span class="workstation-item-name">共 ${itemsArray.length} 个物品</span>
+        </div>
+      `;
+    }
+  },
+
+  updateSlotCounts() {
+    const roastCount = document.getElementById('roast-count');
+    const grindCount = document.getElementById('grind-count');
+    const brewCount = document.getElementById('brew-count');
+    const blendCount = document.getElementById('blend-count');
+    const processCount = document.getElementById('processing-count');
+    const processBtn = document.getElementById('process-all-btn');
+    
+    if (roastCount) roastCount.textContent = this.craftState.roastItems.length;
+    if (grindCount) grindCount.textContent = this.craftState.grindItems.length;
+    if (brewCount) brewCount.textContent = this.craftState.brewItems.length;
+    if (blendCount) blendCount.textContent = this.craftState.blendItems.length;
+    if (processCount) processCount.textContent = this.craftState.processItems.length;
+    if (processBtn) processBtn.disabled = this.craftState.processItems.length === 0;
+    
+    const blendBtn = document.getElementById('blend-btn');
+    if (blendBtn) {
+      blendBtn.disabled = this.craftState.blendItems.length === 0;
     }
   },
 
   removeFromSlot(slotType) {
-    let item = null;
+    let itemsArray = null;
+    let slotId = '';
+    let placeholder = '';
+    let optionsContainerId = '';
+    let optionsPlaceholder = '';
     
     switch (slotType) {
+      case 'process':
+        itemsArray = this.craftState.processItems;
+        slotId = 'processing-slot';
+        placeholder = '点击放入生豆';
+        optionsContainerId = 'processing-options';
+        optionsPlaceholder = '放入生豆后选择处理方式';
+        break;
       case 'roast':
-        if (!this.craftState.roastItem) return;
-        item = this.craftState.roastItem;
-        this.craftState.roastItem = null;
-        this.craftState.roastLevel = null;
-        this.resetSlot('roast-slot', '点击放入生豆');
-        const roastContainer = document.getElementById('roast-options');
-        if (roastContainer) {
-          roastContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择烘焙程度</div>';
-        }
+        itemsArray = this.craftState.roastItems;
+        slotId = 'roast-slot';
+        placeholder = '点击放入生豆';
+        optionsContainerId = 'roast-options';
+        optionsPlaceholder = '放入生豆后选择烘焙程度';
         break;
-        
       case 'grind':
-        if (!this.craftState.grindItem) return;
-        item = this.craftState.grindItem;
-        this.craftState.grindItem = null;
-        this.craftState.grindLevel = null;
-        this.resetSlot('grind-slot', '点击放入熟豆');
-        const grindContainer = document.getElementById('grind-options');
-        if (grindContainer) {
-          grindContainer.innerHTML = '<div class="options-placeholder">放入熟豆后选择研磨粗细</div>';
-        }
+        itemsArray = this.craftState.grindItems;
+        slotId = 'grind-slot';
+        placeholder = '点击放入熟豆';
+        optionsContainerId = 'grind-options';
+        optionsPlaceholder = '放入熟豆后选择研磨粗细';
         break;
-        
       case 'brew':
-        if (!this.craftState.brewItem) return;
-        item = this.craftState.brewItem;
-        this.craftState.brewItem = null;
-        this.craftState.brewMethod = null;
-        this.resetSlot('brew-slot', '点击放入咖啡粉');
-        const brewContainer = document.getElementById('brew-options');
-        if (brewContainer) {
-          brewContainer.innerHTML = '<div class="options-placeholder">放入咖啡粉后选择萃取方式</div>';
-        }
+        itemsArray = this.craftState.brewItems;
+        slotId = 'brew-slot';
+        placeholder = '点击放入咖啡粉';
+        optionsContainerId = 'brew-options';
+        optionsPlaceholder = '放入咖啡粉后选择萃取方式';
         break;
-        
       case 'blend':
-        if (!this.craftState.blendItem) return;
-        item = this.craftState.blendItem;
-        this.craftState.blendItem = null;
-        this.resetSlot('blend-slot', '点击放入咖啡液');
-        document.getElementById('blend-btn').disabled = true;
+        itemsArray = this.craftState.blendItems;
+        slotId = 'blend-slot';
+        placeholder = '点击放入咖啡液';
+        optionsContainerId = null;
         break;
     }
     
-    if (item) {
+    if (itemsArray.length === 0) return;
+    
+    const removedItems = [...itemsArray];
+    itemsArray.length = 0;
+    
+    removedItems.forEach(item => {
       const existing = this.state.inventory.find(i => i.item.id === item.id);
       if (existing) {
         existing.count++;
       } else {
         this.state.inventory.push({ item: { ...item }, count: 1 });
       }
-      
-      this.addMessage(`➖ 取出物品: ${item.icon} ${item.name}`);
-      this.renderWorkshopInventory();
+    });
+    
+    this.resetSlot(slotId, placeholder);
+    
+    if (optionsContainerId) {
+      const container = document.getElementById(optionsContainerId);
+      if (container) {
+        container.innerHTML = `<div class="options-placeholder">${optionsPlaceholder}</div>`;
+      }
     }
+    
+    if (slotType === 'blend') {
+      const blendBtn = document.getElementById('blend-btn');
+      if (blendBtn) blendBtn.disabled = true;
+    }
+    
+    this.updateSlotCounts();
+    this.addMessage(`➖ 取出 ${removedItems.length} 个物品`);
+    this.renderWorkshopInventory();
   },
 
-  updateAdditivesDisplay() {
-    const display = document.getElementById('additives-display');
+  clearSlot(slotType) {
+    this.removeFromSlot(slotType);
+  },
+
+  clearProcessingSlot() {
+    this.clearSlot('process');
+  },
+
+  clearRoastSlot() {
+    this.clearSlot('roast');
+  },
+
+  clearGrindSlot() {
+    this.clearSlot('grind');
+  },
+
+  clearBrewSlot() {
+    this.clearSlot('brew');
+  },
+
+  clearBlendSlot() {
+    this.clearSlot('blend');
+  },
+
+  selectProcessingItem(index) {
+    if (this.selectedProcessingItem === index) {
+      this.selectedProcessingItem = null;
+    } else {
+      this.selectedProcessingItem = index;
+      const item = this.state.inventory[index].item;
+      this.addMessage(`📦 选中: ${item.icon} ${item.name}`);
+    }
+    this.renderProcessingInventory();
+  },
+
+  renderProcessingInventory() {
+    const container = document.getElementById('processing-inventory');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    this.state.inventory.forEach((invItem, index) => {
+      if (invItem.item.type !== 'green_bean') return;
+      
+      const slot = document.createElement('div');
+      slot.className = 'inventory-slot';
+      if (this.selectedProcessingItem === index) {
+        slot.style.borderColor = '#e94560';
+        slot.style.boxShadow = '0 0 10px rgba(233, 69, 96, 0.5)';
+      }
+      
+      slot.innerHTML = `
+        <span class="item-icon">${invItem.item.icon}</span>
+        ${invItem.count > 1 ? `<span class="item-count">${invItem.count}</span>` : ''}
+      `;
+      slot.title = `${invItem.item.name}: ${invItem.item.description}\n类型: ${invItem.item.type}\n标签: ${invItem.item.tags.join(', ')}`;
+      
+      slot.onclick = (e) => {
+        const count = e.shiftKey ? Math.min(5, invItem.count) : 1;
+        this.selectedProcessingItem = index;
+        this.putInSlot('process', count);
+      };
+      container.appendChild(slot);
+    });
+  },
+
+  updateProcessingStats() {
+    const goldEl = document.getElementById('processing-gold');
+    const repEl = document.getElementById('processing-reputation');
+    if (goldEl) goldEl.textContent = this.state.gold;
+    if (repEl) repEl.textContent = this.state.reputation;
+  },
+
+  renderProcessingOptions() {
+    const container = document.getElementById('processing-options');
+    if (!container) return;
+    
+    if (this.craftState.processItems.length === 0) {
+      container.innerHTML = '<div class="options-placeholder">放入生豆后选择处理方式</div>';
+      return;
+    }
+    
+    container.innerHTML = '';
+    
+    this.processMethods.forEach(method => {
+      const btn = document.createElement('button');
+      btn.className = 'craft-option-btn';
+      
+      let disabled = false;
+      let disabledReason = '';
+      
+      if (method.requiredTool && !this.state.tools[method.requiredTool]) {
+        disabled = true;
+        disabledReason = `需要解锁工具: ${this.tools[method.requiredTool]?.name || method.requiredTool}`;
+      }
+      
+      if (method.exclusiveTo) {
+        const hasEligibleBean = this.craftState.processItems.some(bean => 
+          method.exclusiveTo.some(tag => bean.tags.includes(tag) || bean.name.includes(tag))
+        );
+        if (!hasEligibleBean) {
+          disabled = true;
+          disabledReason = `仅适用于海岛豆`;
+        }
+      }
+      
+      const addedTags = method.addedTags || [];
+      const removedTags = method.removeTags || [];
+      
+      btn.innerHTML = `
+        <div class="option-name">${method.icon} ${method.name}</div>
+        <div class="option-desc">${method.description}</div>
+        ${disabled ? `<div class="option-locked">🔒 ${disabledReason}</div>` : ''}
+        <div class="option-preview">
+          ${addedTags.length > 0 ? `<div><span class="tag-added">+${addedTags.join(' +')}</span></div>` : ''}
+          ${removedTags.length > 0 ? `<div><span class="tag-removed">-${removedTags.join(' -')}</span></div>` : ''}
+        </div>
+      `;
+      
+      if (disabled) {
+        btn.disabled = true;
+      } else {
+        btn.onclick = () => this.performProcessing(method.id);
+      }
+      
+      container.appendChild(btn);
+    });
+  },
+
+  renderAdditivesOptions() {
+    const container = document.getElementById('additives-options');
+    const display = document.getElementById('selected-additives-display');
+    
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const additives = this.state.inventory.filter(i => i.item.type === 'additive');
+    
+    if (additives.length === 0) {
+      container.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.75rem;">没有可用配料</span>';
+    } else {
+      additives.forEach(invItem => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.cssText = 'padding: 4px 8px; font-size: 0.7rem; margin: 2px;';
+        
+        const selectedCount = this.craftState.additives.filter(a => a.id === invItem.item.id).length;
+        
+        btn.innerHTML = `${invItem.item.icon} ${invItem.item.name} (${invItem.count})${selectedCount > 0 ? ` ✕${selectedCount}` : ''}`;
+        btn.title = invItem.item.description;
+        btn.disabled = selectedCount >= invItem.count || this.craftState.additives.length >= 3;
+        
+        if (selectedCount > 0) {
+          btn.style.background = 'rgba(233, 69, 96, 0.3)';
+          btn.style.borderColor = '#e94560';
+        }
+        
+        btn.onclick = () => {
+          const existingIndex = this.state.inventory.findIndex(i => i.item.id === invItem.item.id);
+          if (existingIndex >= 0) {
+            this.selectedWorkshopItem = existingIndex;
+            this.putInSlot('blend', 1);
+          }
+        };
+        
+        container.appendChild(btn);
+      });
+    }
+    
     if (display) {
       if (this.craftState.additives.length > 0) {
-        display.innerHTML = this.craftState.additives.map((a, index) => `
-          <span class="additive-item" onclick="Game.removeAdditive(${index})" title="点击移除 ${a.name}">
-            ${a.icon} ${a.name}
-          </span>
-        `).join(' ');
+        const unique = {};
+        this.craftState.additives.forEach(a => {
+          unique[a.id] = unique[a.id] ? { ...unique[a.id], count: unique[a.id].count + 1 } : { item: a, count: 1 };
+        });
+        display.innerHTML = Object.values(unique).map(({ item, count }, idx) => 
+          `<span style="cursor: pointer; padding: 2px 6px; background: rgba(233, 69, 96, 0.2); border-radius: 4px; margin: 0 2px;" 
+                 onclick="Game.removeAdditiveById('${item.id}')" title="点击移除">
+            ${item.icon} ${count > 1 ? `x${count}` : ''}
+          </span>`
+        ).join(' ');
       } else {
         display.textContent = '无';
       }
     }
   },
 
-  removeAdditive(index) {
-    if (index >= 0 && index < this.craftState.additives.length) {
-      const removedAdditive = this.craftState.additives[index];
-      this.craftState.additives.splice(index, 1);
-      this.updateAdditivesDisplay();
-      
-      const existing = this.state.inventory.find(i => i.item.id === removedAdditive.id);
+  removeAdditiveById(itemId) {
+    const index = this.craftState.additives.findIndex(a => a.id === itemId);
+    if (index >= 0) {
+      this.removeAdditive(index);
+    }
+  },
+
+  performProcessing(processMethodId) {
+    if (this.craftState.processItems.length === 0) {
+      this.addMessage('请先放入生豆！', 'warning');
+      return;
+    }
+    
+    const method = this.processMethods.find(p => p.id === processMethodId);
+    if (!method) {
+      this.addMessage('无效的处理方式！', 'warning');
+      return;
+    }
+    
+    if (method.requiredTool && !this.state.tools[method.requiredTool]) {
+      this.addMessage('需要解锁对应工具！', 'warning');
+      return;
+    }
+    
+    const processCount = this.craftState.processItems.length;
+    const processedBeans = [];
+    
+    this.craftState.processItems.forEach(greenBean => {
+      const processedBean = this.createProcessedBean(greenBean, processMethodId);
+      processedBeans.push(processedBean);
+    });
+    
+    processedBeans.forEach(bean => {
+      const existing = this.state.inventory.find(i => i.item.id === bean.id);
       if (existing) {
         existing.count++;
       } else {
-        this.state.inventory.push({ item: { ...removedAdditive }, count: 1 });
+        this.state.inventory.push({ item: bean, count: 1 });
       }
-      
-      this.addMessage(`➖ 移除配料: ${removedAdditive.icon} ${removedAdditive.name}`);
-      this.renderWorkshopInventory();
+    });
+    
+    this.addMessage(`🔬 预处理完成！`, 'success');
+    this.addMessage(`   处理方式: ${method.name}`);
+    this.addMessage(`   处理数量: ${processCount} 个`);
+    this.addMessage(`   效果: ${method.description}`);
+    
+    this.craftState.processItems = [];
+    this.craftState.processMethod = processMethodId;
+    this.resetSlot('processing-slot', '点击放入生豆');
+    
+    const optionsContainer = document.getElementById('processing-options');
+    if (optionsContainer) {
+      optionsContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择处理方式</div>';
     }
+    
+    this.updateSlotCounts();
+    this.renderProcessingInventory();
+    this.renderWorkshopInventory();
   },
 
   // 显示操作选项弹窗
@@ -2879,6 +3190,10 @@ const Game = {
     
     container.innerHTML = '';
     
+    const hasItems = this.craftState.roastItems.length > 0;
+    const firstItem = hasItems ? this.craftState.roastItems[0] : null;
+    const itemCount = this.craftState.roastItems.length;
+    
     this.roastLevels.forEach(roast => {
       const isLocked = roast.requiredTool && !this.state.tools[roast.requiredTool];
       const btn = document.createElement('button');
@@ -2886,8 +3201,8 @@ const Game = {
       btn.disabled = isLocked;
       
       let previewHtml = '';
-      if (!isLocked && this.craftState.roastItem) {
-        const preview = this.calculatePreviewTags(this.craftState.roastItem, 'roast', roast.id);
+      if (!isLocked && hasItems && firstItem) {
+        const preview = this.calculatePreviewTags(firstItem, 'roast', roast.id);
         previewHtml = '<div class="option-preview">';
         
         if (preview.removedTags.length > 0) {
@@ -2906,6 +3221,7 @@ const Game = {
       btn.innerHTML = `
         <div class="option-name">
           ${roast.icon} ${roast.name}
+          ${itemCount > 0 ? `<span style="font-size: 0.7rem; color: var(--text-secondary); margin-left: 8px;">(x${itemCount})</span>` : ''}
         </div>
         <div class="option-desc">${roast.description}</div>
         ${previewHtml}
@@ -2914,17 +3230,22 @@ const Game = {
       
       if (!isLocked) {
         btn.onclick = () => {
-          const preview = this.calculatePreviewTags(this.craftState.roastItem, 'roast', roast.id);
+          if (!hasItems) {
+            this.addMessage('请先放入生豆！', 'warning');
+            return;
+          }
+          
+          const preview = this.calculatePreviewTags(firstItem, 'roast', roast.id);
           
           let confirmContent = `
             <div class="preview-info">
               <div class="preview-row">
                 <span class="preview-label">原料:</span>
-                <span>${this.craftState.roastItem.icon} ${this.craftState.roastItem.name}</span>
+                <span>${firstItem.icon} ${firstItem.name} x${itemCount}</span>
               </div>
               <div class="preview-row">
                 <span class="preview-label">当前标签:</span>
-                <span class="tag-list">${this.craftState.roastItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
+                <span class="tag-list">${firstItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
               </div>
               <div class="preview-arrow">↓</div>
               <div class="preview-row">
@@ -2963,7 +3284,7 @@ const Game = {
           `;
           
           this.showConfirmDialog(
-            '确认烘焙',
+            `确认烘焙 (x${itemCount})`,
             confirmContent,
             () => this.performRoast(roast.id)
           );
@@ -2980,6 +3301,10 @@ const Game = {
     
     container.innerHTML = '';
     
+    const hasItems = this.craftState.grindItems.length > 0;
+    const firstItem = hasItems ? this.craftState.grindItems[0] : null;
+    const itemCount = this.craftState.grindItems.length;
+    
     this.grindLevels.forEach(grind => {
       const isLocked = grind.requiredTool && !this.state.tools[grind.requiredTool];
       const btn = document.createElement('button');
@@ -2987,8 +3312,8 @@ const Game = {
       btn.disabled = isLocked;
       
       let previewHtml = '';
-      if (!isLocked && this.craftState.grindItem) {
-        const preview = this.calculatePreviewTags(this.craftState.grindItem, 'grind', grind.id);
+      if (!isLocked && hasItems && firstItem) {
+        const preview = this.calculatePreviewTags(firstItem, 'grind', grind.id);
         previewHtml = '<div class="option-preview">';
         
         if (preview.addedTags.length > 0) {
@@ -3004,6 +3329,7 @@ const Game = {
       btn.innerHTML = `
         <div class="option-name">
           ${grind.icon} ${grind.name}
+          ${itemCount > 0 ? `<span style="font-size: 0.7rem; color: var(--text-secondary); margin-left: 8px;">(x${itemCount})</span>` : ''}
         </div>
         <div class="option-desc">${grind.description}</div>
         ${previewHtml}
@@ -3012,17 +3338,22 @@ const Game = {
       
       if (!isLocked) {
         btn.onclick = () => {
-          const preview = this.calculatePreviewTags(this.craftState.grindItem, 'grind', grind.id);
+          if (!hasItems) {
+            this.addMessage('请先放入熟豆！', 'warning');
+            return;
+          }
+          
+          const preview = this.calculatePreviewTags(firstItem, 'grind', grind.id);
           
           let confirmContent = `
             <div class="preview-info">
               <div class="preview-row">
                 <span class="preview-label">原料:</span>
-                <span>${this.craftState.grindItem.icon} ${this.craftState.grindItem.name}</span>
+                <span>${firstItem.icon} ${firstItem.name} x${itemCount}</span>
               </div>
               <div class="preview-row">
                 <span class="preview-label">当前标签:</span>
-                <span class="tag-list">${this.craftState.grindItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
+                <span class="tag-list">${firstItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
               </div>
               <div class="preview-arrow">↓</div>
               <div class="preview-row">
@@ -3054,7 +3385,7 @@ const Game = {
           `;
           
           this.showConfirmDialog(
-            '确认研磨',
+            `确认研磨 (x${itemCount})`,
             confirmContent,
             () => this.performGrind(grind.id)
           );
@@ -3071,6 +3402,10 @@ const Game = {
     
     container.innerHTML = '';
     
+    const hasItems = this.craftState.brewItems.length > 0;
+    const firstItem = hasItems ? this.craftState.brewItems[0] : null;
+    const itemCount = this.craftState.brewItems.length;
+    
     this.brewMethods.forEach(brew => {
       const isLocked = brew.requiredTool && !this.state.tools[brew.requiredTool];
       const btn = document.createElement('button');
@@ -3078,8 +3413,8 @@ const Game = {
       btn.disabled = isLocked;
       
       let previewHtml = '';
-      if (!isLocked && this.craftState.brewItem) {
-        const preview = this.calculatePreviewTags(this.craftState.brewItem, 'brew', brew.id);
+      if (!isLocked && hasItems && firstItem) {
+        const preview = this.calculatePreviewTags(firstItem, 'brew', brew.id);
         previewHtml = '<div class="option-preview">';
         
         if (preview.addedTags.length > 0) {
@@ -3098,6 +3433,7 @@ const Game = {
       btn.innerHTML = `
         <div class="option-name">
           ${brew.icon} ${brew.name}
+          ${itemCount > 0 ? `<span style="font-size: 0.7rem; color: var(--text-secondary); margin-left: 8px;">(x${itemCount})</span>` : ''}
         </div>
         <div class="option-desc">${brew.description}</div>
         ${previewHtml}
@@ -3106,17 +3442,22 @@ const Game = {
       
       if (!isLocked) {
         btn.onclick = () => {
-          const preview = this.calculatePreviewTags(this.craftState.brewItem, 'brew', brew.id);
+          if (!hasItems) {
+            this.addMessage('请先放入咖啡粉！', 'warning');
+            return;
+          }
+          
+          const preview = this.calculatePreviewTags(firstItem, 'brew', brew.id);
           
           let confirmContent = `
             <div class="preview-info">
               <div class="preview-row">
                 <span class="preview-label">原料:</span>
-                <span>${this.craftState.brewItem.icon} ${this.craftState.brewItem.name}</span>
+                <span>${firstItem.icon} ${firstItem.name} x${itemCount}</span>
               </div>
               <div class="preview-row">
                 <span class="preview-label">当前标签:</span>
-                <span class="tag-list">${this.craftState.brewItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
+                <span class="tag-list">${firstItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
               </div>
               <div class="preview-arrow">↓</div>
               <div class="preview-row">
@@ -3155,7 +3496,7 @@ const Game = {
           `;
           
           this.showConfirmDialog(
-            '确认萃取',
+            `确认萃取 (x${itemCount})`,
             confirmContent,
             () => this.performBrew(brew.id)
           );
@@ -3167,7 +3508,7 @@ const Game = {
   },
 
   performRoast(roastLevelId) {
-    if (!this.craftState.roastItem) {
+    if (this.craftState.roastItems.length === 0) {
       this.addMessage('请先放入生豆！', 'warning');
       return;
     }
@@ -3183,15 +3524,33 @@ const Game = {
       return;
     }
     
-    const roastedBean = this.createRoastedBean(this.craftState.roastItem, roastLevelId);
-    this.state.inventory.push({ item: roastedBean, count: 1 });
+    const roastCount = this.craftState.roastItems.length;
+    const roastedBeans = [];
+    
+    this.craftState.roastItems.forEach(greenBean => {
+      const roastedBean = this.createRoastedBean(greenBean, roastLevelId);
+      roastedBeans.push(roastedBean);
+    });
+    
+    roastedBeans.forEach(bean => {
+      const existing = this.state.inventory.find(i => i.item.id === bean.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        this.state.inventory.push({ item: bean, count: 1 });
+      }
+    });
+    
+    const firstBean = this.craftState.roastItems[0];
+    const firstRoasted = roastedBeans[0];
     
     this.addMessage(`🔥 烘焙完成！`, 'success');
-    this.addMessage(`   ${this.craftState.roastItem.icon} ${this.craftState.roastItem.name} → ${roastedBean.icon} ${roastedBean.name}`);
+    this.addMessage(`   烘焙数量: ${roastCount} 个`);
+    this.addMessage(`   示例: ${firstBean.icon} ${firstBean.name} → ${firstRoasted.icon} ${firstRoasted.name}`);
     this.addMessage(`   烘焙程度: ${roast.name}`);
-    this.addMessage(`   最终标签: ${roastedBean.tags.join(', ')}`);
+    this.addMessage(`   示例最终标签: ${firstRoasted.tags.join(', ')}`);
     
-    this.craftState.roastItem = null;
+    this.craftState.roastItems = [];
     this.craftState.roastLevel = roastLevelId;
     this.resetSlot('roast-slot', '点击放入生豆');
     
@@ -3200,12 +3559,13 @@ const Game = {
       roastContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择烘焙程度</div>';
     }
     
+    this.updateSlotCounts();
     this.updateCraftProgress(1);
     this.renderWorkshopInventory();
   },
 
   performGrind(grindLevelId) {
-    if (!this.craftState.grindItem) {
+    if (this.craftState.grindItems.length === 0) {
       this.addMessage('请先放入熟豆！', 'warning');
       return;
     }
@@ -3221,15 +3581,33 @@ const Game = {
       return;
     }
     
-    const powder = this.createCoffeePowder(this.craftState.grindItem, grindLevelId);
-    this.state.inventory.push({ item: powder, count: 1 });
+    const grindCount = this.craftState.grindItems.length;
+    const powders = [];
+    
+    this.craftState.grindItems.forEach(roastedBean => {
+      const powder = this.createCoffeePowder(roastedBean, grindLevelId);
+      powders.push(powder);
+    });
+    
+    powders.forEach(powder => {
+      const existing = this.state.inventory.find(i => i.item.id === powder.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        this.state.inventory.push({ item: powder, count: 1 });
+      }
+    });
+    
+    const firstBean = this.craftState.grindItems[0];
+    const firstPowder = powders[0];
     
     this.addMessage(`⚙️ 研磨完成！`, 'success');
-    this.addMessage(`   ${this.craftState.grindItem.icon} ${this.craftState.grindItem.name} → ${powder.icon} ${powder.name}`);
+    this.addMessage(`   研磨数量: ${grindCount} 个`);
+    this.addMessage(`   示例: ${firstBean.icon} ${firstBean.name} → ${firstPowder.icon} ${firstPowder.name}`);
     this.addMessage(`   研磨粗细: ${grind.name}`);
-    this.addMessage(`   最终标签: ${powder.tags.join(', ')}`);
+    this.addMessage(`   示例最终标签: ${firstPowder.tags.join(', ')}`);
     
-    this.craftState.grindItem = null;
+    this.craftState.grindItems = [];
     this.craftState.grindLevel = grindLevelId;
     this.resetSlot('grind-slot', '点击放入熟豆');
     
@@ -3238,12 +3616,13 @@ const Game = {
       grindContainer.innerHTML = '<div class="options-placeholder">放入熟豆后选择研磨粗细</div>';
     }
     
+    this.updateSlotCounts();
     this.updateCraftProgress(2);
     this.renderWorkshopInventory();
   },
 
   performBrew(brewMethodId) {
-    if (!this.craftState.brewItem) {
+    if (this.craftState.brewItems.length === 0) {
       this.addMessage('请先放入咖啡粉！', 'warning');
       return;
     }
@@ -3259,15 +3638,33 @@ const Game = {
       return;
     }
     
-    const liquid = this.createCoffeeLiquid(this.craftState.brewItem, brewMethodId);
-    this.state.inventory.push({ item: liquid, count: 1 });
+    const brewCount = this.craftState.brewItems.length;
+    const liquids = [];
+    
+    this.craftState.brewItems.forEach(powder => {
+      const liquid = this.createCoffeeLiquid(powder, brewMethodId);
+      liquids.push(liquid);
+    });
+    
+    liquids.forEach(liquid => {
+      const existing = this.state.inventory.find(i => i.item.id === liquid.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        this.state.inventory.push({ item: liquid, count: 1 });
+      }
+    });
+    
+    const firstPowder = this.craftState.brewItems[0];
+    const firstLiquid = liquids[0];
     
     this.addMessage(`💧 萃取完成！`, 'success');
-    this.addMessage(`   ${this.craftState.brewItem.icon} ${this.craftState.brewItem.name} → ${liquid.icon} ${liquid.name}`);
+    this.addMessage(`   萃取数量: ${brewCount} 个`);
+    this.addMessage(`   示例: ${firstPowder.icon} ${firstPowder.name} → ${firstLiquid.icon} ${firstLiquid.name}`);
     this.addMessage(`   萃取方式: ${brew.name}`);
-    this.addMessage(`   最终标签: ${liquid.tags.join(', ')}`);
+    this.addMessage(`   示例最终标签: ${firstLiquid.tags.join(', ')}`);
     
-    this.craftState.brewItem = null;
+    this.craftState.brewItems = [];
     this.craftState.brewMethod = brewMethodId;
     this.resetSlot('brew-slot', '点击放入咖啡粉');
     
@@ -3276,36 +3673,55 @@ const Game = {
       brewContainer.innerHTML = '<div class="options-placeholder">放入咖啡粉后选择萃取方式</div>';
     }
     
+    this.updateSlotCounts();
     this.updateCraftProgress(3);
     this.renderWorkshopInventory();
   },
 
   // 改进的调和系统：根据所有原料和工艺动态生成咖啡
   performBlend() {
-    if (!this.craftState.blendItem) {
+    if (this.craftState.blendItems.length === 0) {
       this.addMessage('请先放入咖啡液！', 'warning');
       return;
     }
     
-    const coffee = this.createFinishedCoffee(this.craftState.blendItem, this.craftState.additives);
+    const blendCount = this.craftState.blendItems.length;
+    const coffees = [];
     
-    this.craftState.finishedCoffee = coffee;
-    this.showFinishedCoffee(coffee);
+    this.craftState.blendItems.forEach(liquid => {
+      const coffee = this.createFinishedCoffee(liquid, [...this.craftState.additives]);
+      coffees.push(coffee);
+    });
     
-    this.addMessage(`☕ 咖啡制作完成！`, 'success');
-    this.addMessage(`   名称: ${coffee.name}`);
-    this.addMessage(`   评分: ${coffee.score}`);
-    this.addMessage(`   标签: ${coffee.tags.join(', ')}`);
-    this.addMessage(`   描述: ${coffee.description}`);
-    this.addMessage(`   建议售价: ${coffee.price} 金币`);
+    if (coffees.length === 1) {
+      this.craftState.finishedCoffee = coffees[0];
+      this.showFinishedCoffee(coffees[0]);
+      
+      this.addMessage(`☕ 咖啡制作完成！`, 'success');
+      this.addMessage(`   名称: ${coffees[0].name}`);
+      this.addMessage(`   评分: ${coffees[0].score}`);
+      this.addMessage(`   标签: ${coffees[0].tags.join(', ')}`);
+      this.addMessage(`   描述: ${coffees[0].description}`);
+      this.addMessage(`   建议售价: ${coffees[0].price} 金币`);
+    } else {
+      coffees.forEach(coffee => {
+        this.state.coffeeStock.push(coffee);
+      });
+      
+      this.addMessage(`☕ 批量咖啡制作完成！`, 'success');
+      this.addMessage(`   制作数量: ${blendCount} 杯`);
+      this.addMessage(`   已自动存入咖啡库存`);
+    }
     
-    this.craftState.blendItem = null;
+    this.craftState.blendItems = [];
     this.craftState.additives = [];
     document.getElementById('blend-btn').disabled = true;
     this.resetSlot('blend-slot', '点击放入咖啡液');
-    this.updateAdditivesDisplay();
+    this.renderAdditivesOptions();
     
+    this.updateSlotCounts();
     this.updateCraftProgress(4);
+    this.renderCoffeeInventory();
     this.renderWorkshopInventory();
   },
 
@@ -3720,10 +4136,50 @@ const Game = {
       }
     });
     
-    document.getElementById('roast-slot')?.addEventListener('click', () => this.putInSlot('roast'));
-    document.getElementById('grind-slot')?.addEventListener('click', () => this.putInSlot('grind'));
-    document.getElementById('brew-slot')?.addEventListener('click', () => this.putInSlot('brew'));
-    document.getElementById('blend-slot')?.addEventListener('click', () => this.putInSlot('blend'));
+    document.getElementById('processing-slot')?.addEventListener('click', (e) => {
+      if (this.selectedProcessingItem !== null) {
+        const count = e.shiftKey ? 5 : 1;
+        this.putInSlot('process', count);
+      } else {
+        this.removeFromSlot('process');
+      }
+    });
+    
+    document.getElementById('roast-slot')?.addEventListener('click', (e) => {
+      if (this.selectedWorkshopItem !== null) {
+        const count = e.shiftKey ? 5 : 1;
+        this.putInSlot('roast', count);
+      } else {
+        this.removeFromSlot('roast');
+      }
+    });
+    
+    document.getElementById('grind-slot')?.addEventListener('click', (e) => {
+      if (this.selectedWorkshopItem !== null) {
+        const count = e.shiftKey ? 5 : 1;
+        this.putInSlot('grind', count);
+      } else {
+        this.removeFromSlot('grind');
+      }
+    });
+    
+    document.getElementById('brew-slot')?.addEventListener('click', (e) => {
+      if (this.selectedWorkshopItem !== null) {
+        const count = e.shiftKey ? 5 : 1;
+        this.putInSlot('brew', count);
+      } else {
+        this.removeFromSlot('brew');
+      }
+    });
+    
+    document.getElementById('blend-slot')?.addEventListener('click', (e) => {
+      if (this.selectedWorkshopItem !== null) {
+        const count = e.shiftKey ? 5 : 1;
+        this.putInSlot('blend', count);
+      } else {
+        this.removeFromSlot('blend');
+      }
+    });
   },
 
   init() {
@@ -3739,6 +4195,9 @@ const Game = {
     console.log('   - 烘焙/研磨/萃取可选择参数');
     console.log('   - 咖啡名称根据原料和工艺动态生成');
     console.log('   - 保留产地信息（哥伦比亚/埃塞俄比亚/肯尼亚/巴西）');
+    console.log('   - 新增独立预处理房间');
+    console.log('   - 所有制作步骤支持复数材料');
+    console.log('   - Shift+点击 可批量放入5个物品');
   }
 };
 
