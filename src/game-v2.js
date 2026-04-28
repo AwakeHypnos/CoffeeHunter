@@ -2793,17 +2793,6 @@ const Game = {
     this.clearSlot('blend');
   },
 
-  selectProcessingItem(index) {
-    if (this.selectedProcessingItem === index) {
-      this.selectedProcessingItem = null;
-    } else {
-      this.selectedProcessingItem = index;
-      const item = this.state.inventory[index].item;
-      this.addMessage(`📦 选中: ${item.icon} ${item.name}`);
-    }
-    this.renderProcessingInventory();
-  },
-
   renderProcessingInventory() {
     const container = document.getElementById('processing-inventory');
     if (!container) return;
@@ -2815,7 +2804,7 @@ const Game = {
       
       const slot = document.createElement('div');
       slot.className = 'inventory-slot';
-      if (this.selectedProcessingItem === index) {
+      if (this.selectedWorkshopItem === index) {
         slot.style.borderColor = '#e94560';
         slot.style.boxShadow = '0 0 10px rgba(233, 69, 96, 0.5)';
       }
@@ -2828,7 +2817,7 @@ const Game = {
       
       slot.onclick = (e) => {
         const count = e.shiftKey ? Math.min(5, invItem.count) : 1;
-        this.selectedProcessingItem = index;
+        this.selectedWorkshopItem = index;
         this.putInSlot('process', count);
       };
       container.appendChild(slot);
@@ -4137,7 +4126,7 @@ const Game = {
     });
     
     document.getElementById('processing-slot')?.addEventListener('click', (e) => {
-      if (this.selectedProcessingItem !== null) {
+      if (this.selectedWorkshopItem !== null) {
         const count = e.shiftKey ? 5 : 1;
         this.putInSlot('process', count);
       } else {
