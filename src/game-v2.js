@@ -34,6 +34,8 @@ const Game = {
   },
   
   craftState: {
+    processItem: null,
+    processMethod: null,
     roastItem: null,
     roastLevel: null,
     grindItem: null,
@@ -407,8 +409,283 @@ const Game = {
       description: '印度小豆蔻，独特的香料风味',
       tags: ['香料', '特色', '花香'],
       rarity: 'rare'
+    },
+    
+    jam_berry: {
+      id: 'jam_berry',
+      name: '莓果果浆',
+      type: 'additive',
+      subtype: 'jam',
+      icon: '🍯',
+      description: '新鲜莓果熬制的果浆，酸甜浓郁',
+      tags: ['果香', '莓果', '酸甜', '甜感'],
+      rarity: 'uncommon'
+    },
+    jam_orange: {
+      id: 'jam_orange',
+      name: '柑橘果浆',
+      type: 'additive',
+      subtype: 'jam',
+      icon: '🍯',
+      description: '新鲜柑橘熬制的果浆，明亮酸甜',
+      tags: ['果香', '柑橘', '酸甜', '柠檬酸'],
+      rarity: 'uncommon'
+    },
+    jam_tropical: {
+      id: 'jam_tropical',
+      name: '热带果浆',
+      type: 'additive',
+      subtype: 'jam',
+      icon: '🍯',
+      description: '芒果、菠萝等热带水果熬制的果浆',
+      tags: ['果香', '热带水果', '芒果', '菠萝', '甜感'],
+      rarity: 'rare'
+    },
+    
+    spice_extract_cinnamon: {
+      id: 'spice_extract_cinnamon',
+      name: '肉桂浸液',
+      type: 'additive',
+      subtype: 'spice_extract',
+      icon: '🫗',
+      description: '肉桂棒慢浸提取的浓郁香料液',
+      tags: ['香料', '肉桂', '温暖', '甜感'],
+      rarity: 'uncommon'
+    },
+    spice_extract_cardamom: {
+      id: 'spice_extract_cardamom',
+      name: '豆蔻浸液',
+      type: 'additive',
+      subtype: 'spice_extract',
+      icon: '🫗',
+      description: '小豆蔻慢浸提取的独特香料液',
+      tags: ['香料', '豆蔻', '花香', '特色'],
+      rarity: 'rare'
+    },
+    spice_extract_vanilla: {
+      id: 'spice_extract_vanilla',
+      name: '香草精',
+      type: 'additive',
+      subtype: 'spice_extract',
+      icon: '🫗',
+      description: '纯正香草精，浓郁甜美香气',
+      tags: ['香料', '香草', '甜感', '花香'],
+      rarity: 'uncommon'
+    },
+    
+    nectar_honey: {
+      id: 'nectar_honey',
+      name: '纯蜂蜜',
+      type: 'additive',
+      subtype: 'nectar',
+      icon: '🍯',
+      description: '天然纯蜂蜜，柔和甜润',
+      tags: ['甜感', '蜂蜜甜', '花香', '柔和'],
+      rarity: 'uncommon'
+    },
+    nectar_flower: {
+      id: 'nectar_flower',
+      name: '花蜜糖',
+      type: 'additive',
+      subtype: 'nectar',
+      icon: '🌸',
+      description: '多种花卉精华提取的花蜜糖',
+      tags: ['甜感', '花香甜', '茉莉', '兰花', '花香'],
+      rarity: 'rare'
+    },
+    nectar_caramel: {
+      id: 'nectar_caramel',
+      name: '焦糖糖浆',
+      type: 'additive',
+      subtype: 'nectar',
+      icon: '🍬',
+      description: '慢熬焦糖糖浆，浓郁焦香',
+      tags: ['甜感', '焦糖甜', '焦香', '烘焙'],
+      rarity: 'uncommon'
+    },
+    
+    mist_essence: {
+      id: 'mist_essence',
+      name: '迷雾精华',
+      type: 'additive',
+      subtype: 'mist_material',
+      icon: '🌫️',
+      description: '从迷雾深处提取的神秘精华，木质草本风味',
+      tags: ['迷雾风味', '木质', '草本', '泥土', '特色'],
+      rarity: 'epic'
+    },
+    mist_crystal: {
+      id: 'mist_crystal',
+      name: '迷雾结晶',
+      type: 'additive',
+      subtype: 'mist_material',
+      icon: '💎',
+      description: '迷雾区域特有的神秘结晶，矿盐咸感',
+      tags: ['迷雾风味', '矿盐', '咸感', '矿质', '稀有'],
+      rarity: 'legendary'
+    },
+    mist_herb: {
+      id: 'mist_herb',
+      name: '迷雾草药',
+      type: 'additive',
+      subtype: 'mist_material',
+      icon: '🌿',
+      description: '只在迷雾区域生长的神秘草药',
+      tags: ['迷雾风味', '草本', '木质', '泥土', '苔藓'],
+      rarity: 'rare'
     }
   },
+
+  // ============================================
+  // 咖啡风味系统定义
+  // ============================================
+  
+  flavorTastes: {
+    sour: {
+      id: 'sour',
+      name: '酸',
+      subtypes: ['柠檬酸', '苹果酸', '酒石酸', '莓果酸'],
+      tags: ['柠檬酸', '苹果酸', '酒石酸', '莓果酸', '酸感', '明亮酸', '尖锐果酸']
+    },
+    bitter: {
+      id: 'bitter',
+      name: '苦',
+      subtypes: ['咖啡因苦', '烘焙焦苦', '木质苦', '烟熏苦'],
+      tags: ['咖啡因苦', '烘焙焦苦', '木质苦', '烟熏苦', '苦味', '焦味', '浓醇']
+    },
+    sweet: {
+      id: 'sweet',
+      name: '甜',
+      subtypes: ['焦糖甜', '蜂蜜甜', '果糖甜', '麦芽甜', '花香甜'],
+      tags: ['焦糖甜', '蜂蜜甜', '果糖甜', '麦芽甜', '花香甜', '甜感', '蜜糖', '奶油甜']
+    },
+    salty: {
+      id: 'salty',
+      name: '咸',
+      subtypes: ['海盐感', '矿盐调味', '泥土咸感'],
+      tags: ['海盐', '矿盐', '泥土咸感', '咸感', '矿质']
+    }
+  },
+  
+  flavorAromas: {
+    floral: {
+      id: 'floral',
+      name: '花香调',
+      subtypes: ['茉莉', '兰花', '玫瑰', '桂花'],
+      tags: ['茉莉', '兰花', '玫瑰', '桂花', '花香', '栀子花香', '兰花香'],
+      icon: '🌸'
+    },
+    fruity: {
+      id: 'fruity',
+      name: '果香调',
+      subtypes: ['柑橘', '莓果', '热带水果'],
+      tags: ['柑橘', '莓果', '热带水果', '果香', '柠檬', '橙子', '蓝莓', '草莓', '菠萝', '芒果', '荔枝', '百香果', '樱桃', '柚子'],
+      icon: '🍊'
+    },
+    nutty_chocolate: {
+      id: 'nutty_chocolate',
+      name: '坚果可可调',
+      subtypes: ['杏仁', '核桃', '黑巧克力', '可可'],
+      tags: ['杏仁', '核桃', '黑巧克力', '可可', '坚果', '巧克力', '烤坚果', '可可脂'],
+      icon: '🥜'
+    },
+    spicy: {
+      id: 'spicy',
+      name: '香料调',
+      subtypes: ['肉桂', '豆蔻', '胡椒', '香草'],
+      tags: ['肉桂', '豆蔻', '胡椒', '香草', '香料', '辛香料', '胡椒味', '香草精'],
+      icon: '🌶️'
+    },
+    woody_herbal: {
+      id: 'woody_herbal',
+      name: '木质草本调',
+      subtypes: ['松木', '干草', '泥土', '苔藓'],
+      tags: ['松木', '干草', '泥土', '苔藓', '木质', '草本', '木质调', '草药', '泥土味', '迷雾风味'],
+      icon: '🌿',
+      exclusive: 'mist'
+    },
+    roasted_caramel: {
+      id: 'roasted_caramel',
+      name: '烘焙焦香调',
+      subtypes: ['焦糖', '烟熏', '烤麦芽', '炭烧'],
+      tags: ['焦糖', '烟熏', '烤麦芽', '炭烧', '烘焙', '焦香', '烤香', '烟熏味'],
+      icon: '🔥'
+    }
+  },
+  
+  flavorTextures: {
+    rich: { id: 'rich', name: '醇厚', description: '浓郁饱满的口感' },
+    light: { id: 'light', name: '清爽', description: '清淡明亮的口感' },
+    silky: { id: 'silky', name: '丝滑', description: '顺滑如丝的口感' },
+    thick: { id: 'thick', name: '浓稠', description: '厚重粘稠的口感' },
+    dry: { id: 'dry', name: '干涩', description: '干涩收敛的口感' },
+    oily: { id: 'oily', name: '油脂饱满', description: '丰富油脂的口感' },
+    watery: { id: 'watery', name: '水润', description: '清新水润的口感' }
+  },
+
+  // ============================================
+  // 预处理方式定义
+  // ============================================
+  
+  processMethods: [
+    {
+      id: 'washed',
+      name: '水洗处理',
+      icon: '💧',
+      description: '干净通透、果酸清晰、花香纯净',
+      tags: ['水洗', '干净通透', '果酸清晰', '花香纯净'],
+      addedTags: ['水洗', '干净'],
+      tagMultiplier: { '柠檬酸': 1.3, '苹果酸': 1.2, '花香': 1.2, '茉莉': 1.1 },
+      removeTags: ['泥土味', '木质苦'],
+      qualityBonus: 1
+    },
+    {
+      id: 'natural',
+      name: '日晒处理',
+      icon: '☀️',
+      description: '发酵果香、红酒感、热带水果、甜感爆炸',
+      tags: ['日晒', '发酵果香', '红酒感', '热带水果', '甜感爆炸'],
+      addedTags: ['日晒', '发酵', '红酒感'],
+      tagMultiplier: { '热带水果': 1.4, '莓果': 1.3, '甜感': 1.3, '蜂蜜甜': 1.2 },
+      removeTags: ['干净通透'],
+      qualityBonus: 2
+    },
+    {
+      id: 'honey',
+      name: '蜜处理',
+      icon: '🍯',
+      description: '桃子、蜜糖、柔和果香，甜感极强',
+      tags: ['蜜处理', '桃子', '蜜糖', '柔和果香', '甜感极强'],
+      addedTags: ['蜜处理', '蜜糖', '桃子香'],
+      tagMultiplier: { '甜感': 1.4, '蜂蜜甜': 1.3, '焦糖甜': 1.2, '桃子': 1.2 },
+      removeTags: [],
+      qualityBonus: 2
+    },
+    {
+      id: 'anaerobic',
+      name: '厌氧发酵',
+      icon: '🍇',
+      description: '葡萄、荔枝、浆果、烈酒风味，创意特调必备',
+      tags: ['厌氧发酵', '葡萄', '荔枝', '浆果', '烈酒风味'],
+      addedTags: ['厌氧', '发酵', '烈酒感', '特殊处理'],
+      tagMultiplier: { '葡萄': 1.4, '荔枝': 1.3, '浆果': 1.2, '酒香': 1.3 },
+      removeTags: [],
+      qualityBonus: 3,
+      requiredTool: 'fermentationChamber'
+    },
+    {
+      id: 'wet_hulled',
+      name: '湿刨处理',
+      icon: '🌴',
+      description: '海岛豆专属，泥土草本味',
+      tags: ['湿刨处理', '泥土草本味', '海岛风味'],
+      addedTags: ['湿刨', '海岛风味', '泥土草本'],
+      tagMultiplier: { '泥土': 1.3, '草本': 1.2, '木质': 1.1 },
+      removeTags: ['干净通透', '柠檬酸'],
+      qualityBonus: 1,
+      exclusiveTo: ['island']
+    }
+  ],
 
   // ============================================
   // 烘焙程度定义
@@ -502,28 +779,81 @@ const Game = {
   brewMethods: [
     {
       id: 'espresso',
-      name: '意式浓缩',
+      name: '意式高压浓缩',
       icon: '☕',
-      description: '高压快速萃取，浓郁醇厚',
-      tags: ['意式', '浓郁', '巧克力', '坚果'],
-      tagMultiplier: { '巧克力': 1.3, '坚果': 1.2, '苦味': 1.2 },
+      description: '高压快速萃取厚油脂，所有奶咖基底',
+      tags: ['意式', '浓郁', '巧克力', '坚果', '油脂饱满', '浓稠'],
+      tagMultiplier: { '巧克力': 1.3, '坚果': 1.2, '苦味': 1.2, '油脂饱满': 1.1 },
+      addedTags: ['意式浓缩', '厚油脂'],
+      textureBonus: 'oily',
       requiredTool: 'espressoMachine'
     },
     {
       id: 'pour_over',
-      name: '手冲',
+      name: '手冲滴滤',
       icon: '☕',
-      description: '逐层注水，风味清晰',
-      tags: ['手冲', '清晰', '果香', '花香'],
-      tagMultiplier: { '果香': 1.3, '花香': 1.2, '酸感': 1.1 }
+      description: '干净果香、清淡柔和，新手基础配方',
+      tags: ['手冲', '清晰', '果香', '花香', '清爽', '平衡'],
+      tagMultiplier: { '果香': 1.3, '花香': 1.2, '酸感': 1.1, '柠檬酸': 1.2 },
+      addedTags: ['手冲', '干净'],
+      textureBonus: 'light'
+    },
+    {
+      id: 'french_press',
+      name: '法压浸泡',
+      icon: '🫖',
+      description: '醇厚草本，适合搭配香料、草药',
+      tags: ['法压', '醇厚', '草本', '香料', '木质', '浓郁'],
+      tagMultiplier: { '草本': 1.3, '木质': 1.2, '香料': 1.1, '泥土': 1.2 },
+      addedTags: ['法压', '浸泡萃取'],
+      textureBonus: 'rich',
+      removeTags: ['清爽', '干净通透']
     },
     {
       id: 'cold_brew',
-      name: '冷萃',
+      name: '冷萃/冰滴',
       icon: '🧊',
-      description: '低温长时间浸泡，低酸顺滑',
-      tags: ['冷萃', '顺滑', '甜感', '低酸'],
-      tagMultiplier: { '甜感': 1.3, '顺滑': 1.2, '酸感': 0.5 }
+      description: '低温慢萃，低苦顺滑，适合水果特调',
+      tags: ['冷萃', '顺滑', '甜感', '低酸', '水润', '清爽'],
+      tagMultiplier: { '甜感': 1.3, '顺滑': 1.2, '酸感': 0.5, '苦味': 0.7, '果香': 1.1 },
+      addedTags: ['冷萃', '冰滴', '低酸'],
+      textureBonus: 'silky',
+      removeTags: ['焦味', '木质苦']
+    },
+    {
+      id: 'moka_pot',
+      name: '摩卡壶',
+      icon: '🫖',
+      description: '浓醇焦香，深烘豆子专属',
+      tags: ['摩卡', '浓醇', '焦香', '巧克力', '苦味', '浓稠'],
+      tagMultiplier: { '巧克力': 1.4, '苦味': 1.3, '焦味': 1.2, '焦糖': 1.1 },
+      addedTags: ['摩卡壶', '蒸汽加压'],
+      textureBonus: 'thick',
+      requiredTool: 'mokaPot',
+      recommendedRoast: 'dark'
+    },
+    {
+      id: 'turkish',
+      name: '土耳其煮制',
+      icon: '☕',
+      description: '咖啡粉连渣煮制，混合香料，复古暗黑风',
+      tags: ['土耳其', '极致苦涩', '香料融合', '浓郁', '干涩'],
+      tagMultiplier: { '苦味': 1.5, '香料': 1.4, '木质苦': 1.3, '烟熏苦': 1.2 },
+      addedTags: ['土耳其', '连渣煮制', '复古暗黑'],
+      textureBonus: 'dry',
+      removeTags: ['清爽', '干净', '花香'],
+      requiredGrind: 'extra_fine'
+    },
+    {
+      id: 'immersion_brew',
+      name: '浸泡酿造',
+      icon: '🍶',
+      description: '咖啡豆+水果+香料+特殊迷雾素材，长时间密封浸泡发酵，产出独一无二的炼金特调咖啡',
+      tags: ['浸泡酿造', '炼金特调', '发酵', '独特风味', '创意'],
+      tagMultiplier: { '果香': 1.4, '香料': 1.3, '甜感': 1.2, '发酵': 1.5, '迷雾风味': 1.4 },
+      addedTags: ['炼金特调', '浸泡发酵', '创意咖啡'],
+      textureBonus: 'rich',
+      requiredTool: 'brewingChamber'
     }
   ],
 
@@ -1004,14 +1334,61 @@ const Game = {
   // 动态物品创建函数
   // ============================================
   
+  createProcessedBean(greenBean, processMethodId) {
+    const process = this.processMethods.find(p => p.id === processMethodId) || this.processMethods[0];
+    
+    let tags = [...greenBean.tags];
+    
+    if (process.removeTags && process.removeTags.length > 0) {
+      process.removeTags.forEach(rt => {
+        tags = tags.filter(t => t !== rt);
+      });
+    }
+    
+    if (process.addedTags && process.addedTags.length > 0) {
+      process.addedTags.forEach(at => {
+        if (!tags.includes(at)) {
+          tags.push(at);
+        }
+      });
+    }
+    
+    process.tags.forEach(pt => {
+      if (!tags.includes(pt)) {
+        tags.push(pt);
+      }
+    });
+    
+    if (greenBean.origin && !tags.includes(greenBean.origin)) {
+      tags.push(greenBean.origin);
+    }
+    
+    return {
+      id: `processed_${greenBean.id}_${processMethodId}_${Date.now()}`,
+      baseId: greenBean.id,
+      name: `[${process.name}] ${greenBean.name}`,
+      type: 'processed_bean',
+      icon: process.icon,
+      description: `使用${process.name}处理的${greenBean.name}`,
+      origin: greenBean.origin,
+      processMethod: processMethodId,
+      qualityBonus: process.qualityBonus || 0,
+      tags: tags,
+      baseGreenBean: greenBean,
+      processInfo: process
+    };
+  },
+  
   createRoastedBean(greenBean, roastLevel) {
     const roast = this.roastLevels.find(r => r.id === roastLevel) || this.roastLevels[1];
     
     let tags = [...greenBean.tags];
     
-    roast.removeTags.forEach(rt => {
-      tags = tags.filter(t => t !== rt);
-    });
+    if (roast.removeTags && roast.removeTags.length > 0) {
+      roast.removeTags.forEach(rt => {
+        tags = tags.filter(t => t !== rt);
+      });
+    }
     
     roast.tags.forEach(rt => {
       if (!tags.includes(rt)) {
@@ -1032,6 +1409,7 @@ const Game = {
       description: `使用${roast.name}烘焙的${greenBean.name}`,
       origin: greenBean.origin,
       roastLevel: roastLevel,
+      processMethod: greenBean.processMethod,
       tags: tags,
       baseGreenBean: greenBean,
       roastInfo: roast
@@ -1059,6 +1437,7 @@ const Game = {
       origin: roastedBean.origin,
       roastLevel: roastedBean.roastLevel,
       grindLevel: grindLevel,
+      processMethod: roastedBean.processMethod,
       tags: tags,
       baseRoastedBean: roastedBean,
       grindInfo: grind
@@ -1070,11 +1449,32 @@ const Game = {
     
     let tags = [...powder.tags];
     
+    if (brew.removeTags && brew.removeTags.length > 0) {
+      brew.removeTags.forEach(rt => {
+        tags = tags.filter(t => t !== rt);
+      });
+    }
+    
+    if (brew.addedTags && brew.addedTags.length > 0) {
+      brew.addedTags.forEach(at => {
+        if (!tags.includes(at)) {
+          tags.push(at);
+        }
+      });
+    }
+    
     brew.tags.forEach(bt => {
       if (!tags.includes(bt)) {
         tags.push(bt);
       }
     });
+    
+    if (brew.textureBonus && !tags.includes(brew.textureBonus)) {
+      const texture = this.flavorTextures[brew.textureBonus];
+      if (texture) {
+        tags.push(texture.name);
+      }
+    }
     
     return {
       id: `liquid_${powder.id}_${brewMethod}_${Date.now()}`,
@@ -1087,6 +1487,7 @@ const Game = {
       roastLevel: powder.roastLevel,
       grindLevel: powder.grindLevel,
       brewMethod: brewMethod,
+      processMethod: powder.processMethod,
       tags: tags,
       basePowder: powder,
       brewInfo: brew
@@ -1347,6 +1748,8 @@ const Game = {
     };
     
     this.craftState = {
+      processItem: null,
+      processMethod: null,
       roastItem: null,
       roastLevel: null,
       grindItem: null,
