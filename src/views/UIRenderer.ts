@@ -217,9 +217,10 @@ export class UIRenderer {
     const canCraft = craftingVM.canCraft;
     
     const steps = [
-      { id: 'step-roast', step: 'roast_ready' as const, action: () => craftingVM.roastGreenBean(1) },
-      { id: 'step-grind', step: 'grind_ready' as const, action: () => craftingVM.grindRoastedBean(1) },
-      { id: 'step-brew', step: 'brew_ready' as const, action: () => craftingVM.brewCoffee(0) },
+      { id: 'step-process', step: 'process_ready' as const, action: () => craftingVM.processGreenBean(0, 1) },
+      { id: 'step-roast', step: 'roast_ready' as const, action: () => craftingVM.roastGreenBean(1, 1) },
+      { id: 'step-grind', step: 'grind_ready' as const, action: () => craftingVM.grindRoastedBean(1, 1) },
+      { id: 'step-brew', step: 'brew_ready' as const, action: () => craftingVM.brewCoffee(0, 1) },
       { id: 'step-blend', step: 'blend_ready' as const, action: () => craftingVM.createFinishedCoffee() },
     ];
 
@@ -235,6 +236,9 @@ export class UIRenderer {
         }
       };
     });
+
+    this.renderAdditivesPanel();
+    this.renderBatchControls();
 
     const btnCraft = document.getElementById('btn-craft-coffee') as HTMLButtonElement;
     const btnSell = document.getElementById('btn-sell-coffee') as HTMLButtonElement;
@@ -256,6 +260,132 @@ export class UIRenderer {
         }
       };
     }
+  }
+
+  private renderAdditivesPanel(): void {
+    const additivesContainer = document.getElementById('additives-panel');
+    if (!additivesContainer) return;
+
+    const availableAdditives = craftingVM.getAvailableAdditives();
+    const selectedAdditives = craftingVM.getSelectedAdditives();
+
+    additivesContainer.innerHTML = `
+      <div style="margin-bottom: 10px; font-weight: bold; color: #e94560;">🧪 配料选择（最多3种）</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+        ${availableAdditives.map((additive, index) => {
+          const isSelected = selectedAdditives.includes(additive.id);
+          const selectedCount = selectedAdditives.filter(id => id === additive.id).length;
+          return `
+            <button 
+              class="btn ${isSelected ? 'btn-primary' : 'btn-secondary'}" 
+              style="padding: 8px 12px; font-size: 0.85rem;"
+              onclick="uiRenderer_selectAdditive('${additive.id}')"
+              title="${additive.description}"
+            >
+              ${additive.icon} ${additive.name} ${selectedCount > 0 ? `(${selectedCount})` : ''}
+            </button>
+          `;
+        }).join('')}
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 0.85rem; color: #888;">已选择:</span>
+        ${selectedAdditives.length > 0 ? 
+          selectedAdditives.map((id, index) => {
+            const item = availableAdditives.find(a => a.id === id);
+            return `
+              <span style="background: rgba(233, 69, 96, 0.2); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;"
+                    onclick="uiRenderer_removeAdditive(${index})" title="点击移除">
+                ${item?.icon || '❓'} ${item?.name || id} ✕
+              </span>
+            `;
+          }).join('') :
+          '<span style="font-size: 0.85rem; color: #555;">无</span>'
+        }
+        ${selectedAdditives.length > 0 ? `
+          <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="uiRenderer_clearAdditives()">
+            清空
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    (window as unknown as Record<string, unknown>).uiRenderer_selectAdditive = (itemId: string) => {
+      craftingVM.selectAdditive(itemId, 1);
+      this.renderCraftingPanel();
+    };
+
+    (window as unknown as Record<string, unknown>).uiRenderer_removeAdditive = (index: number) => {
+      craftingVM.removeAdditive(index);
+      this.renderCraftingPanel();
+    };
+
+    (window as unknown as Record<string, unknown>).uiRenderer_clearAdditives = () => {
+      craftingVM.clearSelectedAdditives();
+      this.renderCraftingPanel();
+    };
+  }
+
+  private renderBatchControls(): void {
+    const batchContainer = document.getElementById('batch-controls');
+    if (!batchContainer) return;
+
+    const canCraft = craftingVM.canCraft;
+    const hasGreenBean = craftingVM.canPerformStep('roast_ready');
+    const hasRoastedBean = craftingVM.canPerformStep('grind_ready');
+    const hasPowder = craftingVM.canPerformStep('brew_ready');
+
+    batchContainer.innerHTML = `
+      <div style="margin-bottom: 8px; font-weight: bold; color: #e94560;">📦 批量制作</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" 
+                ${!canCraft || !hasGreenBean ? 'disabled' : ''}
+                onclick="uiRenderer_batchProcess('process', 0, 3)">
+          🔬 预处理x3
+        </button>
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" 
+                ${!canCraft || !hasGreenBean ? 'disabled' : ''}
+                onclick="uiRenderer_batchProcess('roast', 1, 3)">
+          🔥 烘焙x3
+        </button>
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" 
+                ${!canCraft || !hasRoastedBean ? 'disabled' : ''}
+                onclick="uiRenderer_batchProcess('grind', 1, 3)">
+          ⚙️ 研磨x3
+        </button>
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" 
+                ${!canCraft || !hasPowder ? 'disabled' : ''}
+                onclick="uiRenderer_batchProcess('brew', 0, 3)">
+          💧 萃取x3
+        </button>
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" 
+                ${!canCraft || !hasGreenBean ? 'disabled' : ''}
+                onclick="uiRenderer_batchProcess('roast', 1, 5)">
+          🔥 烘焙x5
+        </button>
+      </div>
+    `;
+
+    (window as unknown as Record<string, unknown>).uiRenderer_batchProcess = (
+      step: string, 
+      optionIndex: number, 
+      count: number
+    ) => {
+      switch (step) {
+        case 'process':
+          craftingVM.processGreenBean(optionIndex, count);
+          break;
+        case 'roast':
+          craftingVM.roastGreenBean(optionIndex, count);
+          break;
+        case 'grind':
+          craftingVM.grindRoastedBean(optionIndex, count);
+          break;
+        case 'brew':
+          craftingVM.brewCoffee(optionIndex, count);
+          break;
+      }
+      this.renderCraftingPanel();
+    };
   }
 
   private renderCoffeeResult(): void {

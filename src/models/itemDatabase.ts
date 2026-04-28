@@ -1,4 +1,4 @@
-import { Item, FlavorType, RoastProfile, GrindSetting, BrewingMethod } from './types';
+import { Item, FlavorType, RoastProfile, GrindSetting, BrewingMethod, ProcessMethod } from './types';
 
 const createFlavor = (name: FlavorType, value: number, isPositive: boolean) => ({
   name,
@@ -322,6 +322,144 @@ export const itemDatabase: Record<string, Item> = {
     rarity: 'uncommon'
   }
 };
+
+export const processMethods: ProcessMethod[] = [
+  {
+    id: 'washed',
+    name: '水洗处理',
+    icon: '💧',
+    description: '干净通透、果酸清晰、花香纯净',
+    tags: ['水洗', '干净通透', '果酸清晰', '花香纯净'],
+    addedTags: ['水洗', '干净'],
+    tagMultiplier: {},
+    removeTags: [],
+    qualityBonus: 1,
+    flavorModifiers: {
+      add: ['floral'],
+      remove: ['bitter', 'burnt'],
+      multiply: {
+        'fruity': 1.3,
+        'floral': 1.2,
+        'sour': 1.1,
+        'sweet': 0.9,
+        'nutty': 0.9,
+        'chocolate': 0.8,
+        'spicy': 0.8,
+        'bitter': 0.5,
+        'burnt': 0,
+        'watery': 1
+      }
+    }
+  },
+  {
+    id: 'natural',
+    name: '日晒处理',
+    icon: '☀️',
+    description: '发酵果香、红酒感、热带水果、甜感爆炸',
+    tags: ['日晒', '发酵果香', '红酒感', '热带水果', '甜感爆炸'],
+    addedTags: ['日晒', '发酵', '红酒感'],
+    tagMultiplier: {},
+    removeTags: [],
+    qualityBonus: 2,
+    flavorModifiers: {
+      add: ['sweet'],
+      remove: ['watery'],
+      multiply: {
+        'fruity': 1.4,
+        'floral': 1.0,
+        'sour': 0.9,
+        'sweet': 1.3,
+        'nutty': 1.0,
+        'chocolate': 0.9,
+        'spicy': 0.9,
+        'bitter': 0.8,
+        'burnt': 0.8,
+        'watery': 0.5
+      }
+    }
+  },
+  {
+    id: 'honey',
+    name: '蜜处理',
+    icon: '🍯',
+    description: '桃子、蜜糖、柔和果香，甜感极强',
+    tags: ['蜜处理', '桃子', '蜜糖', '柔和果香', '甜感极强'],
+    addedTags: ['蜜处理', '蜜糖', '桃子香'],
+    tagMultiplier: {},
+    removeTags: [],
+    qualityBonus: 2,
+    flavorModifiers: {
+      add: ['sweet', 'nutty'],
+      remove: [],
+      multiply: {
+        'fruity': 1.1,
+        'floral': 0.9,
+        'sour': 0.7,
+        'sweet': 1.4,
+        'nutty': 1.1,
+        'chocolate': 1.0,
+        'spicy': 0.9,
+        'bitter': 0.9,
+        'burnt': 0.9,
+        'watery': 1.0
+      }
+    }
+  },
+  {
+    id: 'anaerobic',
+    name: '厌氧发酵',
+    icon: '🍇',
+    description: '葡萄、荔枝、浆果、烈酒风味，创意特调必备',
+    tags: ['厌氧发酵', '葡萄', '荔枝', '浆果', '烈酒风味'],
+    addedTags: ['厌氧', '发酵', '烈酒感', '特殊处理'],
+    tagMultiplier: {},
+    removeTags: [],
+    qualityBonus: 3,
+    flavorModifiers: {
+      add: ['fruity', 'floral'],
+      remove: ['bitter'],
+      multiply: {
+        'fruity': 1.5,
+        'floral': 1.3,
+        'sour': 0.8,
+        'sweet': 1.2,
+        'nutty': 0.8,
+        'chocolate': 0.7,
+        'spicy': 1.1,
+        'bitter': 0.6,
+        'burnt': 0.7,
+        'watery': 1.0
+      }
+    }
+  },
+  {
+    id: 'wet_hulled',
+    name: '湿刨处理',
+    icon: '🌴',
+    description: '海岛豆专属，泥土草本味',
+    tags: ['湿刨处理', '泥土草本味', '海岛风味'],
+    addedTags: ['湿刨', '海岛风味', '泥土草本'],
+    tagMultiplier: {},
+    removeTags: [],
+    qualityBonus: 1,
+    flavorModifiers: {
+      add: ['nutty', 'spicy'],
+      remove: ['floral'],
+      multiply: {
+        'fruity': 0.8,
+        'floral': 0.5,
+        'sour': 1.0,
+        'sweet': 0.9,
+        'nutty': 1.3,
+        'chocolate': 1.1,
+        'spicy': 1.2,
+        'bitter': 1.1,
+        'burnt': 1.0,
+        'watery': 1.0
+      }
+    }
+  }
+];
 
 export const roastProfiles: RoastProfile[] = [
   {
