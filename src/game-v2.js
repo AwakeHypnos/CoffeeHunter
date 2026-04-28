@@ -2497,9 +2497,6 @@ const Game = {
   putInSlot(slotType) {
     let hasItemInSlot = false;
     switch (slotType) {
-      case 'process':
-        hasItemInSlot = !!this.craftState.processItem;
-        break;
       case 'roast':
         hasItemInSlot = !!this.craftState.roastItem;
         break;
@@ -2528,22 +2525,9 @@ const Game = {
     const item = invItem.item;
     
     switch (slotType) {
-      case 'process':
-        if (item.type !== 'green_bean') {
-          this.addMessage('预处理需要生咖啡豆！', 'warning');
-          return;
-        }
-        this.craftState.processItem = item;
-        this.craftState.processMethod = null;
-        this.updateSlotDisplay('process-slot', item);
-        this.renderProcessOptions();
-        this.addMessage(`🧹 将 ${item.icon} ${item.name} 放入预处理装置`);
-        this.addMessage(`   标签: ${item.tags.join(', ')}`);
-        break;
-        
       case 'roast':
-        if (item.type !== 'green_bean' && item.type !== 'processed_bean') {
-          this.addMessage('烘焙需要生咖啡豆或处理后豆子！', 'warning');
+        if (item.type !== 'green_bean') {
+          this.addMessage('烘焙需要生咖啡豆！', 'warning');
           return;
         }
         this.craftState.roastItem = item;
@@ -2614,10 +2598,6 @@ const Game = {
     this.renderWorkshopInventory();
   },
 
-  handleWorkstationSlot(slotType) {
-    this.putInSlot(slotType);
-  },
-
   updateSlotDisplay(slotId, item) {
     const slot = document.getElementById(slotId);
     if (slot) {
@@ -2635,18 +2615,6 @@ const Game = {
     let item = null;
     
     switch (slotType) {
-      case 'process':
-        if (!this.craftState.processItem) return;
-        item = this.craftState.processItem;
-        this.craftState.processItem = null;
-        this.craftState.processMethod = null;
-        this.resetSlot('process-slot', '点击放入生豆');
-        const processContainer = document.getElementById('process-options');
-        if (processContainer) {
-          processContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择处理方式</div>';
-        }
-        break;
-        
       case 'roast':
         if (!this.craftState.roastItem) return;
         item = this.craftState.roastItem;
@@ -2784,46 +2752,6 @@ const Game = {
     let reducedTags = [];
     
     switch (processType) {
-      case 'process':
-        const processMethod = this.processMethods.find(p => p.id === processOption);
-        if (processMethod) {
-          if (processMethod.removeTags && processMethod.removeTags.length > 0) {
-            processMethod.removeTags.forEach(rt => {
-              if (tags.includes(rt)) {
-                removedTags.push(rt);
-                tags = tags.filter(t => t !== rt);
-              }
-            });
-          }
-          
-          if (processMethod.addedTags && processMethod.addedTags.length > 0) {
-            processMethod.addedTags.forEach(at => {
-              if (!tags.includes(at)) {
-                addedTags.push(at);
-                tags.push(at);
-              }
-            });
-          }
-          
-          processMethod.tags.forEach(pt => {
-            if (!tags.includes(pt)) {
-              addedTags.push(pt);
-              tags.push(pt);
-            }
-          });
-          
-          if (processMethod.tagMultiplier) {
-            Object.entries(processMethod.tagMultiplier).forEach(([tag, multiplier]) => {
-              if (multiplier > 1) {
-                enhancedTags.push(`${tag} (×${multiplier})`);
-              } else if (multiplier < 1) {
-                reducedTags.push(`${tag} (×${multiplier})`);
-              }
-            });
-          }
-        }
-        break;
-        
       case 'roast':
         const roast = this.roastLevels.find(r => r.id === processOption);
         if (roast) {
@@ -2943,153 +2871,6 @@ const Game = {
         if (onCancel) onCancel();
       }
     });
-  },
-
-  renderProcessOptions() {
-    const container = document.getElementById('process-options');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    this.processMethods.forEach(process => {
-      const isLocked = process.requiredTool && !this.state.tools[process.requiredTool];
-      const btn = document.createElement('button');
-      btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
-      btn.disabled = isLocked;
-      
-      let previewHtml = '';
-      if (!isLocked && this.craftState.processItem) {
-        const preview = this.calculatePreviewTags(this.craftState.processItem, 'process', process.id);
-        previewHtml = '<div class="option-preview">';
-        
-        if (preview.removedTags.length > 0) {
-          previewHtml += `<div class="preview-removed">移除: ${preview.removedTags.map(t => `<span class="tag-removed">${t}</span>`).join(' ')}</div>`;
-        }
-        if (preview.addedTags.length > 0) {
-          previewHtml += `<div class="preview-added">添加: ${preview.addedTags.map(t => `<span class="tag-added">${t}</span>`).join(' ')}</div>`;
-        }
-        if (preview.enhancedTags.length > 0) {
-          previewHtml += `<div class="preview-enhanced">增强: ${preview.enhancedTags.map(t => `<span class="tag-enhanced">${t}</span>`).join(' ')}</div>`;
-        }
-        
-        previewHtml += '</div>';
-      }
-      
-      let lockInfo = '';
-      if (isLocked) {
-        if (process.requiredTool) {
-          lockInfo = `<div class="option-locked">🔒 需要解锁对应工具</div>`;
-        }
-      }
-      
-      btn.innerHTML = `
-        <div class="option-name">
-          ${process.icon} ${process.name}
-        </div>
-        <div class="option-desc">${process.description}</div>
-        ${previewHtml}
-        ${lockInfo}
-      `;
-      
-      if (!isLocked) {
-        btn.onclick = () => {
-          const preview = this.calculatePreviewTags(this.craftState.processItem, 'process', process.id);
-          
-          let confirmContent = `
-            <div class="preview-info">
-              <div class="preview-row">
-                <span class="preview-label">原料:</span>
-                <span>${this.craftState.processItem.icon} ${this.craftState.processItem.name}</span>
-              </div>
-              <div class="preview-row">
-                <span class="preview-label">当前标签:</span>
-                <span class="tag-list">${this.craftState.processItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
-              </div>
-              <div class="preview-arrow">↓</div>
-              <div class="preview-row">
-                <span class="preview-label">处理方式:</span>
-                <span>${process.icon} ${process.name}</span>
-              </div>
-          `;
-          
-          if (preview.removedTags.length > 0) {
-            confirmContent += `<div class="preview-row preview-change">
-              <span class="preview-label remove">移除标签:</span>
-              <span class="tag-list">${preview.removedTags.map(t => `<span class="preview-tag tag-removed">${t}</span>`).join('')}</span>
-            </div>`;
-          }
-          
-          if (preview.addedTags.length > 0) {
-            confirmContent += `<div class="preview-row preview-change">
-              <span class="preview-label add">添加标签:</span>
-              <span class="tag-list">${preview.addedTags.map(t => `<span class="preview-tag tag-added">${t}</span>`).join('')}</span>
-            </div>`;
-          }
-          
-          if (preview.enhancedTags.length > 0) {
-            confirmContent += `<div class="preview-row preview-change">
-              <span class="preview-label enhance">增强效果:</span>
-              <span class="tag-list">${preview.enhancedTags.map(t => `<span class="preview-tag tag-enhanced">${t}</span>`).join('')}</span>
-            </div>`;
-          }
-          
-          confirmContent += `
-              <div class="preview-arrow">↓</div>
-              <div class="preview-row">
-                <span class="preview-label">最终标签:</span>
-                <span class="tag-list">${preview.finalTags.map(t => `<span class="preview-tag tag-final">${t}</span>`).join('')}</span>
-              </div>
-            </div>
-          `;
-          
-          this.showConfirmDialog(
-            '确认预处理',
-            confirmContent,
-            () => this.performProcess(process.id)
-          );
-        };
-      }
-      
-      container.appendChild(btn);
-    });
-  },
-
-  performProcess(processMethodId) {
-    if (!this.craftState.processItem) {
-      this.addMessage('请先放入生豆！', 'warning');
-      return;
-    }
-    
-    const process = this.processMethods.find(p => p.id === processMethodId);
-    if (!process) {
-      this.addMessage('无效的处理方式！', 'warning');
-      return;
-    }
-    
-    if (process.requiredTool && !this.state.tools[process.requiredTool]) {
-      this.addMessage('需要解锁对应工具！', 'warning');
-      return;
-    }
-    
-    const processedBean = this.createProcessedBean(this.craftState.processItem, processMethodId);
-    this.state.inventory.push({ item: processedBean, count: 1 });
-    
-    this.addMessage(`🧹 预处理完成！`, 'success');
-    this.addMessage(`   ${this.craftState.processItem.icon} ${this.craftState.processItem.name} → ${processedBean.icon} ${processedBean.name}`);
-    this.addMessage(`   处理方式: ${process.name}`);
-    this.addMessage(`   最终标签: ${processedBean.tags.join(', ')}`);
-    
-    this.craftState.processItem = null;
-    this.craftState.processMethod = processMethodId;
-    this.resetSlot('process-slot', '点击放入生豆');
-    
-    const processContainer = document.getElementById('process-options');
-    if (processContainer) {
-      processContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择处理方式</div>';
-    }
-    
-    this.updateCraftProgress(1);
-    this.renderWorkshopInventory();
   },
 
   renderRoastOptions() {
@@ -3419,7 +3200,7 @@ const Game = {
       roastContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择烘焙程度</div>';
     }
     
-    this.updateCraftProgress(2);
+    this.updateCraftProgress(1);
     this.renderWorkshopInventory();
   },
 
@@ -3457,7 +3238,7 @@ const Game = {
       grindContainer.innerHTML = '<div class="options-placeholder">放入熟豆后选择研磨粗细</div>';
     }
     
-    this.updateCraftProgress(3);
+    this.updateCraftProgress(2);
     this.renderWorkshopInventory();
   },
 
@@ -3495,99 +3276,8 @@ const Game = {
       brewContainer.innerHTML = '<div class="options-placeholder">放入咖啡粉后选择萃取方式</div>';
     }
     
-    this.updateCraftProgress(4);
+    this.updateCraftProgress(3);
     this.renderWorkshopInventory();
-  },
-
-  previewCoffee() {
-    if (!this.craftState.blendItem) {
-      this.addMessage('请先放入咖啡液！', 'warning');
-      return;
-    }
-    
-    const coffee = this.createFinishedCoffee(this.craftState.blendItem, this.craftState.additives);
-    
-    let previewContent = `
-      <div class="preview-info" style="text-align: left;">
-        <div class="preview-row" style="margin-bottom: 12px;">
-          <span class="preview-label" style="font-weight: bold;">名称:</span>
-          <span>${coffee.name}</span>
-        </div>
-        <div class="preview-row" style="margin-bottom: 12px;">
-          <span class="preview-label" style="font-weight: bold;">评分:</span>
-          <span style="color: var(--primary); font-weight: bold;">${coffee.score}</span>
-        </div>
-        <div class="preview-row" style="margin-bottom: 12px;">
-          <span class="preview-label" style="font-weight: bold;">建议售价:</span>
-          <span style="color: var(--success);">${coffee.price} 金币</span>
-        </div>
-        <div class="preview-row" style="margin-bottom: 12px;">
-          <span class="preview-label" style="font-weight: bold;">风味标签:</span>
-          <span class="tag-list">
-            ${coffee.tags.map(t => `<span class="preview-tag" style="display: inline-block; padding: 2px 8px; margin: 2px; background: rgba(233, 69, 96, 0.2); border-radius: 4px; font-size: 0.85rem;">${t}</span>`).join('')}
-          </span>
-        </div>
-        <div class="preview-row" style="margin-bottom: 12px;">
-          <span class="preview-label" style="font-weight: bold;">描述:</span>
-          <span style="font-size: 0.9rem; color: var(--text-secondary);">${coffee.description}</span>
-        </div>
-    `;
-    
-    const quantitySelect = document.getElementById('blend-quantity');
-    if (quantitySelect) {
-      const quantity = parseInt(quantitySelect.value);
-      if (quantity > 1) {
-        previewContent += `
-          <div class="preview-row" style="margin-bottom: 12px; padding-top: 10px; border-top: 1px solid var(--border-color);">
-            <span class="preview-label" style="font-weight: bold;">批量制作:</span>
-            <span>${quantity} 杯</span>
-          </div>
-          <div class="preview-row">
-            <span class="preview-label" style="font-weight: bold;">总售价:</span>
-            <span style="color: var(--success); font-weight: bold;">${coffee.price * quantity} 金币</span>
-          </div>
-        `;
-      }
-    }
-    
-    previewContent += '</div>';
-    
-    this.showConfirmDialog(
-      '咖啡预览',
-      previewContent,
-      null,
-      '确定'
-    );
-  },
-
-  clearBlendSlot() {
-    if (this.craftState.blendItem) {
-      const existing = this.state.inventory.find(i => i.item.id === this.craftState.blendItem.id);
-      if (existing) {
-        existing.count++;
-      } else {
-        this.state.inventory.push({ item: { ...this.craftState.blendItem }, count: 1 });
-      }
-      this.addMessage(`➖ 取出咖啡液: ${this.craftState.blendItem.icon} ${this.craftState.blendItem.name}`);
-    }
-    
-    this.craftState.additives.forEach(additive => {
-      const existing = this.state.inventory.find(i => i.item.id === additive.id);
-      if (existing) {
-        existing.count++;
-      } else {
-        this.state.inventory.push({ item: { ...additive }, count: 1 });
-      }
-      this.addMessage(`➖ 取出配料: ${additive.icon} ${additive.name}`);
-    });
-    
-    this.craftState.blendItem = null;
-    this.craftState.additives = [];
-    document.getElementById('blend-btn').disabled = true;
-    this.resetSlot('blend-slot', '点击放入咖啡液');
-    this.updateAdditivesDisplay();
-    this.renderWorkshopInventory();
-    this.addMessage('已清空调和槽位', 'info');
   },
 
   // 改进的调和系统：根据所有原料和工艺动态生成咖啡
@@ -3597,28 +3287,17 @@ const Game = {
       return;
     }
     
-    const quantitySelect = document.getElementById('blend-quantity');
-    const quantity = quantitySelect ? parseInt(quantitySelect.value) : 1;
-    
     const coffee = this.createFinishedCoffee(this.craftState.blendItem, this.craftState.additives);
     
     this.craftState.finishedCoffee = coffee;
     this.showFinishedCoffee(coffee);
     
-    if (quantity > 1) {
-      this.addMessage(`☕ 批量制作咖啡完成！(${quantity}杯)`, 'success');
-    } else {
-      this.addMessage(`☕ 咖啡制作完成！`, 'success');
-    }
+    this.addMessage(`☕ 咖啡制作完成！`, 'success');
     this.addMessage(`   名称: ${coffee.name}`);
     this.addMessage(`   评分: ${coffee.score}`);
     this.addMessage(`   标签: ${coffee.tags.join(', ')}`);
     this.addMessage(`   描述: ${coffee.description}`);
-    this.addMessage(`   建议售价: ${coffee.price} 金币 / 杯`);
-    
-    if (quantity > 1) {
-      this.addMessage(`   总售价: ${coffee.price * quantity} 金币`);
-    }
+    this.addMessage(`   建议售价: ${coffee.price} 金币`);
     
     this.craftState.blendItem = null;
     this.craftState.additives = [];
@@ -3626,7 +3305,7 @@ const Game = {
     this.resetSlot('blend-slot', '点击放入咖啡液');
     this.updateAdditivesDisplay();
     
-    this.updateCraftProgress(5);
+    this.updateCraftProgress(4);
     this.renderWorkshopInventory();
   },
 

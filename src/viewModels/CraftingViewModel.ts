@@ -1,7 +1,7 @@
-import { Item, FinishedCoffee, FlavorProfile, CraftingStep } from '../models/types';
+import { Item, FinishedCoffee, FlavorProfile, CraftingStep, ProcessMethod } from '../models/types';
 import { gameVM } from './GameViewModel';
-import { cloneGameState, addItemToInventory, removeItemFromInventory, getFirstItemOfType, hasItemOfType } from '../models/gameState';
-import { itemDatabase, roastProfiles, grindSettings, brewingMethods, getItemById } from '../models/itemDatabase';
+import { cloneGameState, addItemToInventory, removeItemFromInventory, getFirstItemOfType, hasItemOfType, getItemCount } from '../models/gameState';
+import { itemDatabase, roastProfiles, grindSettings, brewingMethods, processMethods, getItemById } from '../models/itemDatabase';
 import { eventBus, GameEvents } from '../utils/eventBus';
 
 export class CraftingViewModel {
@@ -34,6 +34,8 @@ export class CraftingViewModel {
 
     const state = gameVM.state;
     switch (step) {
+      case 'process_ready':
+        return hasItemOfType(state, 'green_bean');
       case 'roast_ready':
         return hasItemOfType(state, 'green_bean');
       case 'grind_ready':
@@ -49,6 +51,22 @@ export class CraftingViewModel {
     }
   }
 
+  public getProcessMethods(): ProcessMethod[] {
+    return processMethods;
+  }
+
+  public getRoastProfiles() {
+    return roastProfiles;
+  }
+
+  public getGrindSettings() {
+    return grindSettings;
+  }
+
+  public getBrewingMethods() {
+    return brewingMethods;
+  }
+
   public getAvailableAdditives(): Item[] {
     const state = gameVM.state;
     const additives: Item[] = [];
@@ -62,12 +80,43 @@ export class CraftingViewModel {
     return additives;
   }
 
-  public selectAdditive(itemId: string): void {
-    if (this.selectedAdditives.includes(itemId)) {
-      this.selectedAdditives = this.selectedAdditives.filter(id => id !== itemId);
-    } else if (this.selectedAdditives.length < 3) {
+  public selectAdditive(itemId: string, count: number = 1): boolean {
+    const state = gameVM.state;
+    const availableCount = getItemCount(state, itemId);
+    
+    if (availableCount < count) {
+      gameVM.logMessage(`数量不足！需要 ${count} 个，但只有 ${availableCount} 个`, 'warning');
+      return false;
+    }
+
+    const currentCount = this.selectedAdditives.filter(id => id === itemId).length;
+    const maxAdditives = 3;
+    
+    if (currentCount + count > maxAdditives) {
+      gameVM.logMessage('最多只能添加3种配料！', 'warning');
+      return false;
+    }
+
+    for (let i = 0; i < count; i++) {
       this.selectedAdditives.push(itemId);
     }
+    return true;
+  }
+
+  public removeAdditive(index: number): boolean {
+    if (index >= 0 && index < this.selectedAdditives.length) {
+      this.selectedAdditives.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  public getSelectedAdditivesWithCount(): Map<string, number> {
+    const countMap = new Map<string, number>();
+    this.selectedAdditives.forEach(id => {
+      countMap.set(id, (countMap.get(id) || 0) + 1);
+    });
+    return countMap;
   }
 
   public getSelectedAdditives(): string[] {
@@ -78,7 +127,44 @@ export class CraftingViewModel {
     this.selectedAdditives = [];
   }
 
-  public roastGreenBean(roastProfileIndex: number = 1): boolean {
+  public processGreenBean(processMethodIndex: number = 0, count: number = 1): boolean {
+    if (!this.canCraft) {
+      gameVM.logMessage('需要回家才能预处理！', 'warning');
+      return false;
+    }
+
+    const state = gameVM.state;
+    const greenBeanItem = getFirstItemOfType(state, 'green_bean');
+    
+    if (!greenBeanItem) {
+      gameVM.logMessage('没有生豆可以预处理！', 'warning');
+      return false;
+    }
+
+    const availableCount = greenBeanItem.count;
+    const actualCount = Math.min(count, availableCount);
+
+    if (actualCount <= 0) {
+      gameVM.logMessage('没有足够的生豆！', 'warning');
+      return false;
+    }
+
+    const processMethod = processMethods[Math.min(processMethodIndex, processMethods.length - 1)];
+    
+    gameVM.updateState(s => {
+      let newState = removeItemFromInventory(s, greenBeanItem.item.id, actualCount);
+      newState = addItemToInventory(newState, greenBeanItem.item.id, actualCount);
+      return newState;
+    });
+
+    gameVM.logMessage(`🔬 预处理完成！使用${processMethod.name}处理了 ${actualCount} 个 ${greenBeanItem.item.name}`, 'success');
+    gameVM.logMessage(`   效果: ${processMethod.description}`, 'info');
+    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'process_ready', result: greenBeanItem.item.id, count: actualCount });
+    
+    return true;
+  }
+
+  public roastGreenBean(roastProfileIndex: number = 1, count: number = 1): boolean {
     if (!this.canCraft) {
       gameVM.logMessage('需要回家才能烘焙！', 'warning');
       return false;
@@ -92,39 +178,43 @@ export class CraftingViewModel {
       return false;
     }
 
+    const availableCount = greenBeanItem.count;
+    const actualCount = Math.min(count, availableCount);
+
+    if (actualCount <= 0) {
+      gameVM.logMessage('没有足够的生豆！', 'warning');
+      return false;
+    }
+
     const roastProfile = roastProfiles[Math.min(roastProfileIndex, roastProfiles.length - 1)];
     
+    let roastedBeanId: string;
+    switch (roastProfileIndex) {
+      case 0:
+        roastedBeanId = 'roasted_light';
+        break;
+      case 2:
+        roastedBeanId = 'roasted_dark';
+        break;
+      default:
+        roastedBeanId = 'roasted_medium';
+    }
+
     gameVM.updateState(s => {
-      let newState = removeItemFromInventory(s, greenBeanItem.item.id, 1);
-      
-      let roastedBeanId: string;
-      switch (roastProfileIndex) {
-        case 0:
-          roastedBeanId = 'roasted_light';
-          break;
-        case 2:
-          roastedBeanId = 'roasted_dark';
-          break;
-        default:
-          roastedBeanId = 'roasted_medium';
-      }
-      
-      newState = addItemToInventory(newState, roastedBeanId, 1);
+      let newState = removeItemFromInventory(s, greenBeanItem.item.id, actualCount);
+      newState = addItemToInventory(newState, roastedBeanId, actualCount);
       return newState;
     });
 
-    const roastedBean = getItemById(
-      roastProfileIndex === 0 ? 'roasted_light' : 
-      roastProfileIndex === 2 ? 'roasted_dark' : 'roasted_medium'
-    );
+    const roastedBean = getItemById(roastedBeanId);
     
-    gameVM.logMessage(`🔥 烘焙完成！使用${roastProfile.name}烘焙了 ${greenBeanItem.item.name} → ${roastedBean?.icon} ${roastedBean?.name}`, 'success');
-    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'roast_ready', result: roastedBean?.id });
+    gameVM.logMessage(`🔥 烘焙完成！使用${roastProfile.name}烘焙了 ${actualCount} 个 ${greenBeanItem.item.name} → ${roastedBean?.icon} ${roastedBean?.name}`, 'success');
+    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'roast_ready', result: roastedBean?.id, count: actualCount });
     
     return true;
   }
 
-  public grindRoastedBean(grindSettingIndex: number = 1): boolean {
+  public grindRoastedBean(grindSettingIndex: number = 1, count: number = 1): boolean {
     if (!this.canCraft) {
       gameVM.logMessage('需要回家才能研磨！', 'warning');
       return false;
@@ -138,31 +228,38 @@ export class CraftingViewModel {
       return false;
     }
 
+    const availableCount = roastedBeanItem.count;
+    const actualCount = Math.min(count, availableCount);
+
+    if (actualCount <= 0) {
+      gameVM.logMessage('没有足够的熟豆！', 'warning');
+      return false;
+    }
+
     const grindSetting = grindSettings[Math.min(grindSettingIndex, grindSettings.length - 1)];
     
+    let powderId: string;
+    if (grindSettingIndex === 0) {
+      powderId = 'coffee_powder_medium';
+    } else {
+      powderId = 'coffee_powder_fine';
+    }
+
     gameVM.updateState(s => {
-      let newState = removeItemFromInventory(s, roastedBeanItem.item.id, 1);
-      
-      let powderId: string;
-      if (grindSettingIndex === 0) {
-        powderId = 'coffee_powder_medium';
-      } else {
-        powderId = 'coffee_powder_fine';
-      }
-      
-      newState = addItemToInventory(newState, powderId, 1);
+      let newState = removeItemFromInventory(s, roastedBeanItem.item.id, actualCount);
+      newState = addItemToInventory(newState, powderId, actualCount);
       return newState;
     });
 
-    const powder = getItemById(grindSettingIndex === 0 ? 'coffee_powder_medium' : 'coffee_powder_fine');
+    const powder = getItemById(powderId);
     
-    gameVM.logMessage(`⚙️ 研磨完成！使用${grindSetting.name}研磨了 ${roastedBeanItem.item.name} → ${powder?.icon} ${powder?.name}`, 'success');
-    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'grind_ready', result: powder?.id });
+    gameVM.logMessage(`⚙️ 研磨完成！使用${grindSetting.name}研磨了 ${actualCount} 个 ${roastedBeanItem.item.name} → ${powder?.icon} ${powder?.name}`, 'success');
+    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'grind_ready', result: powder?.id, count: actualCount });
     
     return true;
   }
 
-  public brewCoffee(brewMethodIndex: number = 0): boolean {
+  public brewCoffee(brewMethodIndex: number = 0, count: number = 1): boolean {
     if (!this.canCraft) {
       gameVM.logMessage('需要回家才能萃取！', 'warning');
       return false;
@@ -176,26 +273,33 @@ export class CraftingViewModel {
       return false;
     }
 
+    const availableCount = powderItem.count;
+    const actualCount = Math.min(count, availableCount);
+
+    if (actualCount <= 0) {
+      gameVM.logMessage('没有足够的咖啡粉！', 'warning');
+      return false;
+    }
+
     const brewMethod = brewingMethods[Math.min(brewMethodIndex, brewingMethods.length - 1)];
     
+    let liquidId: string;
+    if (brewMethodIndex === 1) {
+      liquidId = 'coffee_liquid_pour_over';
+    } else {
+      liquidId = 'coffee_liquid_espresso';
+    }
+
     gameVM.updateState(s => {
-      let newState = removeItemFromInventory(s, powderItem.item.id, 1);
-      
-      let liquidId: string;
-      if (brewMethodIndex === 1) {
-        liquidId = 'coffee_liquid_pour_over';
-      } else {
-        liquidId = 'coffee_liquid_espresso';
-      }
-      
-      newState = addItemToInventory(newState, liquidId, 1);
+      let newState = removeItemFromInventory(s, powderItem.item.id, actualCount);
+      newState = addItemToInventory(newState, liquidId, actualCount);
       return newState;
     });
 
-    const liquid = getItemById(brewMethodIndex === 1 ? 'coffee_liquid_pour_over' : 'coffee_liquid_espresso');
+    const liquid = getItemById(liquidId);
     
-    gameVM.logMessage(`💧 萃取完成！使用${brewMethod.name}萃取了 ${powderItem.item.name} → ${liquid?.icon} ${liquid?.name}`, 'success');
-    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'brew_ready', result: liquid?.id });
+    gameVM.logMessage(`💧 萃取完成！使用${brewMethod.name}萃取了 ${actualCount} 个 ${powderItem.item.name} → ${liquid?.icon} ${liquid?.name}`, 'success');
+    eventBus.emit(GameEvents.CRAFTING_STEP_COMPLETED, { step: 'brew_ready', result: liquid?.id, count: actualCount });
     
     return true;
   }

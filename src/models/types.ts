@@ -72,11 +72,29 @@ export interface GameState {
 
 export type CraftingStep = 
   | 'none'
+  | 'process_ready'
   | 'roast_ready'
   | 'grind_ready'
   | 'brew_ready'
   | 'blend_ready'
   | 'coffee_ready';
+
+export interface ProcessMethod {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tags: string[];
+  addedTags: string[];
+  tagMultiplier: Record<string, number>;
+  removeTags: string[];
+  qualityBonus: number;
+  flavorModifiers: {
+    add: FlavorType[];
+    remove: FlavorType[];
+    multiply: Record<FlavorType, number>;
+  };
+}
 
 export interface FinishedCoffee {
   name: string;
