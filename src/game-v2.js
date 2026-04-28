@@ -34,15 +34,15 @@ const Game = {
   },
   
   craftState: {
-    processItem: null,
+    processItems: [],
     processMethod: null,
-    roastItem: null,
+    roastItems: [],
     roastLevel: null,
-    grindItem: null,
+    grindItems: [],
     grindLevel: null,
-    brewItem: null,
+    brewItems: [],
     brewMethod: null,
-    blendItem: null,
+    blendItems: [],
     additives: [],
     currentStep: 0,
     finishedCoffee: null
@@ -2880,7 +2880,15 @@ const Game = {
       if (disabled) {
         btn.disabled = true;
       } else {
-        btn.onclick = () => this.performProcessing(method.id);
+        if (this.craftState.processMethod === method.id) {
+          btn.style.background = 'rgba(233, 69, 96, 0.2)';
+          btn.style.borderColor = '#e94560';
+        }
+        btn.onclick = () => {
+          this.craftState.processMethod = method.id;
+          this.renderProcessingOptions();
+          this.addMessage(`📋 已选择处理方式: ${method.icon} ${method.name}`);
+        };
       }
       
       container.appendChild(btn);
@@ -2959,7 +2967,13 @@ const Game = {
       return;
     }
     
-    const method = this.processMethods.find(p => p.id === processMethodId);
+    const methodId = processMethodId || this.craftState.processMethod;
+    if (!methodId) {
+      this.addMessage('请先选择处理方式！', 'warning');
+      return;
+    }
+    
+    const method = this.processMethods.find(p => p.id === methodId);
     if (!method) {
       this.addMessage('无效的处理方式！', 'warning');
       return;
@@ -2974,7 +2988,7 @@ const Game = {
     const processedBeans = [];
     
     this.craftState.processItems.forEach(greenBean => {
-      const processedBean = this.createProcessedBean(greenBean, processMethodId);
+      const processedBean = this.createProcessedBean(greenBean, methodId);
       processedBeans.push(processedBean);
     });
     
@@ -2993,7 +3007,7 @@ const Game = {
     this.addMessage(`   效果: ${method.description}`);
     
     this.craftState.processItems = [];
-    this.craftState.processMethod = processMethodId;
+    this.craftState.processMethod = methodId;
     this.resetSlot('processing-slot', '点击放入生豆');
     
     const optionsContainer = document.getElementById('processing-options');

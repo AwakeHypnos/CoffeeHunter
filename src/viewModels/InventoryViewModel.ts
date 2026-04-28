@@ -1,6 +1,6 @@
 import { InventoryItem, Item, ItemType } from '../models/types';
 import { gameVM } from './GameViewModel';
-import { cloneGameState, addItemToInventory, removeItemFromInventory, getItemCount } from '../models/gameState';
+import { addItemToInventory, removeItemFromInventory, getItemCount } from '../models/gameState';
 import { getItemById } from '../models/itemDatabase';
 import { eventBus, GameEvents } from '../utils/eventBus';
 
