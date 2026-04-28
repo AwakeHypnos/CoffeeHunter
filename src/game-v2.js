@@ -20,8 +20,9 @@ const Game = {
     },
     exploredToday: false,
     discovered: {
-      items: new Set(),
-      dangers: new Set()
+      forest: { items: new Set(), dangers: new Set() },
+      mountain: { items: new Set(), dangers: new Set() },
+      volcano: { items: new Set(), dangers: new Set() }
     }
   },
   
@@ -829,8 +830,9 @@ const Game = {
       },
       exploredToday: false,
       discovered: {
-        items: new Set(),
-        dangers: new Set()
+        forest: { items: new Set(), dangers: new Set() },
+        mountain: { items: new Set(), dangers: new Set() },
+        volcano: { items: new Set(), dangers: new Set() }
       }
     };
     
@@ -896,10 +898,11 @@ const Game = {
       
       const knownItems = [];
       const unknownItems = [];
+      const mapDiscovered = this.state.discovered[map.id] || { items: new Set(), dangers: new Set() };
       Object.keys(map.itemWeights).forEach(itemId => {
         const item = this.baseItems[itemId];
         if (item) {
-          if (this.state.discovered.items.has(itemId)) {
+          if (mapDiscovered.items.has(itemId)) {
             knownItems.push(item);
           } else {
             unknownItems.push(item);
@@ -912,7 +915,7 @@ const Game = {
       if (map.dangerLevel >= 2) dangerTypes.push('地形复杂');
       if (map.dangerLevel >= 3) dangerTypes.push('恶劣天气');
       
-      const knownDangers = dangerTypes.filter(d => this.state.discovered.dangers.has(d));
+      const knownDangers = dangerTypes.filter(d => mapDiscovered.dangers.has(d));
       const unknownDangerCount = dangerTypes.length - knownDangers.length;
       
       card.innerHTML = `
@@ -1260,9 +1263,12 @@ const Game = {
     
     if (cell.isDanger) {
       const dangerType = '野生动物出没';
-      if (!this.state.discovered.dangers.has(dangerType)) {
-        this.state.discovered.dangers.add(dangerType);
-        this.addMessage(`📖 发现新危险: ${dangerType}！`, 'danger');
+      const currentMapId = this.state.selectedMap?.id;
+      const mapDiscovered = currentMapId ? this.state.discovered[currentMapId] : null;
+      
+      if (mapDiscovered && !mapDiscovered.dangers.has(dangerType)) {
+        mapDiscovered.dangers.add(dangerType);
+        this.addMessage(`📖 在本地区发现新危险: ${dangerType}！`, 'danger');
       }
       this.addMessage('⚠️ 遇到野生动物！无法前往该位置。', 'danger');
       return;
@@ -1298,6 +1304,9 @@ const Game = {
       return;
     }
     
+    const currentMapId = this.state.selectedMap?.id;
+    const mapDiscovered = currentMapId ? this.state.discovered[currentMapId] : null;
+    
     cell.items.forEach(itemId => {
       const item = this.baseItems[itemId];
       if (item) {
@@ -1309,9 +1318,9 @@ const Game = {
         }
         this.exploreState.collectedItems++;
         
-        if (!this.state.discovered.items.has(itemId)) {
-          this.state.discovered.items.add(itemId);
-          this.addMessage(`📖 发现新素材: ${item.icon} ${item.name}！`, 'success');
+        if (mapDiscovered && !mapDiscovered.items.has(itemId)) {
+          mapDiscovered.items.add(itemId);
+          this.addMessage(`📖 在本地区发现新素材: ${item.icon} ${item.name}！`, 'success');
         }
         
         this.addMessage(`✨ 采集到了 ${item.icon} ${item.name}！`, 'success');
@@ -1451,6 +1460,27 @@ const Game = {
   },
 
   putInSlot(slotType) {
+    let hasItemInSlot = false;
+    switch (slotType) {
+      case 'roast':
+        hasItemInSlot = !!this.craftState.roastItem;
+        break;
+      case 'grind':
+        hasItemInSlot = !!this.craftState.grindItem;
+        break;
+      case 'brew':
+        hasItemInSlot = !!this.craftState.brewItem;
+        break;
+      case 'blend':
+        hasItemInSlot = !!this.craftState.blendItem;
+        break;
+    }
+    
+    if (hasItemInSlot) {
+      this.removeFromSlot(slotType);
+      return;
+    }
+    
     if (this.selectedWorkshopItem === null) {
       this.addMessage('请先从背包中选择一个物品', 'warning');
       return;
@@ -1538,11 +1568,73 @@ const Game = {
     if (slot) {
       slot.classList.add('has-item');
       slot.innerHTML = `
-        <div class="workstation-item">
+        <div class="workstation-item" title="点击取出物品">
           <span class="workstation-item-icon">${item.icon}</span>
           <span class="workstation-item-name">${item.name}</span>
         </div>
       `;
+    }
+  },
+
+  removeFromSlot(slotType) {
+    let item = null;
+    
+    switch (slotType) {
+      case 'roast':
+        if (!this.craftState.roastItem) return;
+        item = this.craftState.roastItem;
+        this.craftState.roastItem = null;
+        this.craftState.roastLevel = null;
+        this.resetSlot('roast-slot', '点击放入生豆');
+        const roastContainer = document.getElementById('roast-options');
+        if (roastContainer) {
+          roastContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择烘焙程度</div>';
+        }
+        break;
+        
+      case 'grind':
+        if (!this.craftState.grindItem) return;
+        item = this.craftState.grindItem;
+        this.craftState.grindItem = null;
+        this.craftState.grindLevel = null;
+        this.resetSlot('grind-slot', '点击放入熟豆');
+        const grindContainer = document.getElementById('grind-options');
+        if (grindContainer) {
+          grindContainer.innerHTML = '<div class="options-placeholder">放入熟豆后选择研磨粗细</div>';
+        }
+        break;
+        
+      case 'brew':
+        if (!this.craftState.brewItem) return;
+        item = this.craftState.brewItem;
+        this.craftState.brewItem = null;
+        this.craftState.brewMethod = null;
+        this.resetSlot('brew-slot', '点击放入咖啡粉');
+        const brewContainer = document.getElementById('brew-options');
+        if (brewContainer) {
+          brewContainer.innerHTML = '<div class="options-placeholder">放入咖啡粉后选择萃取方式</div>';
+        }
+        break;
+        
+      case 'blend':
+        if (!this.craftState.blendItem) return;
+        item = this.craftState.blendItem;
+        this.craftState.blendItem = null;
+        this.resetSlot('blend-slot', '点击放入咖啡液');
+        document.getElementById('blend-btn').disabled = true;
+        break;
+    }
+    
+    if (item) {
+      const existing = this.state.inventory.find(i => i.item.id === item.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        this.state.inventory.push({ item: { ...item }, count: 1 });
+      }
+      
+      this.addMessage(`➖ 取出物品: ${item.icon} ${item.name}`);
+      this.renderWorkshopInventory();
     }
   },
 
@@ -1566,7 +1658,16 @@ const Game = {
       const removedAdditive = this.craftState.additives[index];
       this.craftState.additives.splice(index, 1);
       this.updateAdditivesDisplay();
+      
+      const existing = this.state.inventory.find(i => i.item.id === removedAdditive.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        this.state.inventory.push({ item: { ...removedAdditive }, count: 1 });
+      }
+      
       this.addMessage(`➖ 移除配料: ${removedAdditive.icon} ${removedAdditive.name}`);
+      this.renderWorkshopInventory();
     }
   },
 
@@ -1608,6 +1709,135 @@ const Game = {
     });
   },
 
+  calculatePreviewTags(baseItem, processType, processOption) {
+    let tags = [...baseItem.tags];
+    let addedTags = [];
+    let removedTags = [];
+    let enhancedTags = [];
+    let reducedTags = [];
+    
+    switch (processType) {
+      case 'roast':
+        const roast = this.roastLevels.find(r => r.id === processOption);
+        if (roast) {
+          if (roast.removeTags) {
+            roast.removeTags.forEach(rt => {
+              if (tags.includes(rt)) {
+                removedTags.push(rt);
+                tags = tags.filter(t => t !== rt);
+              }
+            });
+          }
+          
+          roast.tags.forEach(rt => {
+            if (!tags.includes(rt)) {
+              addedTags.push(rt);
+              tags.push(rt);
+            }
+          });
+          
+          if (roast.tagMultiplier) {
+            Object.entries(roast.tagMultiplier).forEach(([tag, multiplier]) => {
+              if (multiplier > 1) {
+                enhancedTags.push(`${tag} (×${multiplier})`);
+              } else if (multiplier < 1) {
+                reducedTags.push(`${tag} (×${multiplier})`);
+              }
+            });
+          }
+        }
+        break;
+        
+      case 'grind':
+        const grind = this.grindLevels.find(g => g.id === processOption);
+        if (grind) {
+          grind.tags.forEach(gt => {
+            if (!tags.includes(gt)) {
+              addedTags.push(gt);
+              tags.push(gt);
+            }
+          });
+          
+          if (grind.tagMultiplier) {
+            Object.entries(grind.tagMultiplier).forEach(([tag, multiplier]) => {
+              if (multiplier > 1) {
+                enhancedTags.push(`${tag} (×${multiplier})`);
+              } else if (multiplier < 1) {
+                reducedTags.push(`${tag} (×${multiplier})`);
+              }
+            });
+          }
+        }
+        break;
+        
+      case 'brew':
+        const brew = this.brewMethods.find(b => b.id === processOption);
+        if (brew) {
+          brew.tags.forEach(bt => {
+            if (!tags.includes(bt)) {
+              addedTags.push(bt);
+              tags.push(bt);
+            }
+          });
+          
+          if (brew.tagMultiplier) {
+            Object.entries(brew.tagMultiplier).forEach(([tag, multiplier]) => {
+              if (multiplier > 1) {
+                enhancedTags.push(`${tag} (×${multiplier})`);
+              } else if (multiplier < 1) {
+                reducedTags.push(`${tag} (×${multiplier})`);
+              }
+            });
+          }
+        }
+        break;
+    }
+    
+    return {
+      finalTags: tags,
+      addedTags: addedTags,
+      removedTags: removedTags,
+      enhancedTags: enhancedTags,
+      reducedTags: reducedTags
+    };
+  },
+
+  showConfirmDialog(title, content, onConfirm, onCancel) {
+    const dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+      <div class="confirm-content">
+        <h3>${title}</h3>
+        <div class="confirm-body">
+          ${content}
+        </div>
+        <div class="confirm-buttons">
+          <button class="btn btn-secondary confirm-cancel">取消</button>
+          <button class="btn btn-primary confirm-ok">确认</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    dialog.querySelector('.confirm-cancel').onclick = () => {
+      document.body.removeChild(dialog);
+      if (onCancel) onCancel();
+    };
+    
+    dialog.querySelector('.confirm-ok').onclick = () => {
+      document.body.removeChild(dialog);
+      if (onConfirm) onConfirm();
+    };
+    
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        document.body.removeChild(dialog);
+        if (onCancel) onCancel();
+      }
+    });
+  },
+
   renderRoastOptions() {
     const container = document.getElementById('roast-options');
     if (!container) return;
@@ -1620,16 +1850,89 @@ const Game = {
       btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
       btn.disabled = isLocked;
       
+      let previewHtml = '';
+      if (!isLocked && this.craftState.roastItem) {
+        const preview = this.calculatePreviewTags(this.craftState.roastItem, 'roast', roast.id);
+        previewHtml = '<div class="option-preview">';
+        
+        if (preview.removedTags.length > 0) {
+          previewHtml += `<div class="preview-removed">移除: ${preview.removedTags.map(t => `<span class="tag-removed">${t}</span>`).join(' ')}</div>`;
+        }
+        if (preview.addedTags.length > 0) {
+          previewHtml += `<div class="preview-added">添加: ${preview.addedTags.map(t => `<span class="tag-added">${t}</span>`).join(' ')}</div>`;
+        }
+        if (preview.enhancedTags.length > 0) {
+          previewHtml += `<div class="preview-enhanced">增强: ${preview.enhancedTags.map(t => `<span class="tag-enhanced">${t}</span>`).join(' ')}</div>`;
+        }
+        
+        previewHtml += '</div>';
+      }
+      
       btn.innerHTML = `
         <div class="option-name">
           ${roast.icon} ${roast.name}
         </div>
         <div class="option-desc">${roast.description}</div>
+        ${previewHtml}
         ${isLocked ? `<div class="option-locked">🔒 需要解锁对应工具</div>` : ''}
       `;
       
       if (!isLocked) {
-        btn.onclick = () => this.performRoast(roast.id);
+        btn.onclick = () => {
+          const preview = this.calculatePreviewTags(this.craftState.roastItem, 'roast', roast.id);
+          
+          let confirmContent = `
+            <div class="preview-info">
+              <div class="preview-row">
+                <span class="preview-label">原料:</span>
+                <span>${this.craftState.roastItem.icon} ${this.craftState.roastItem.name}</span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-label">当前标签:</span>
+                <span class="tag-list">${this.craftState.roastItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
+              </div>
+              <div class="preview-arrow">↓</div>
+              <div class="preview-row">
+                <span class="preview-label">制作方式:</span>
+                <span>${roast.icon} ${roast.name}</span>
+              </div>
+          `;
+          
+          if (preview.removedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label remove">移除标签:</span>
+              <span class="tag-list">${preview.removedTags.map(t => `<span class="preview-tag tag-removed">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          if (preview.addedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label add">添加标签:</span>
+              <span class="tag-list">${preview.addedTags.map(t => `<span class="preview-tag tag-added">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          if (preview.enhancedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label enhance">增强效果:</span>
+              <span class="tag-list">${preview.enhancedTags.map(t => `<span class="preview-tag tag-enhanced">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          confirmContent += `
+              <div class="preview-row">
+                <span class="preview-label">最终标签:</span>
+                <span class="tag-list">${preview.finalTags.map(t => `<span class="preview-tag tag-final">${t}</span>`).join('')}</span>
+              </div>
+            </div>
+          `;
+          
+          this.showConfirmDialog(
+            '确认烘焙',
+            confirmContent,
+            () => this.performRoast(roast.id)
+          );
+        };
       }
       
       container.appendChild(btn);
@@ -1648,16 +1951,79 @@ const Game = {
       btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
       btn.disabled = isLocked;
       
+      let previewHtml = '';
+      if (!isLocked && this.craftState.grindItem) {
+        const preview = this.calculatePreviewTags(this.craftState.grindItem, 'grind', grind.id);
+        previewHtml = '<div class="option-preview">';
+        
+        if (preview.addedTags.length > 0) {
+          previewHtml += `<div class="preview-added">添加: ${preview.addedTags.map(t => `<span class="tag-added">${t}</span>`).join(' ')}</div>`;
+        }
+        if (preview.enhancedTags.length > 0) {
+          previewHtml += `<div class="preview-enhanced">增强: ${preview.enhancedTags.map(t => `<span class="tag-enhanced">${t}</span>`).join(' ')}</div>`;
+        }
+        
+        previewHtml += '</div>';
+      }
+      
       btn.innerHTML = `
         <div class="option-name">
           ${grind.icon} ${grind.name}
         </div>
         <div class="option-desc">${grind.description}</div>
+        ${previewHtml}
         ${isLocked ? `<div class="option-locked">🔒 需要解锁对应工具</div>` : ''}
       `;
       
       if (!isLocked) {
-        btn.onclick = () => this.performGrind(grind.id);
+        btn.onclick = () => {
+          const preview = this.calculatePreviewTags(this.craftState.grindItem, 'grind', grind.id);
+          
+          let confirmContent = `
+            <div class="preview-info">
+              <div class="preview-row">
+                <span class="preview-label">原料:</span>
+                <span>${this.craftState.grindItem.icon} ${this.craftState.grindItem.name}</span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-label">当前标签:</span>
+                <span class="tag-list">${this.craftState.grindItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
+              </div>
+              <div class="preview-arrow">↓</div>
+              <div class="preview-row">
+                <span class="preview-label">制作方式:</span>
+                <span>${grind.icon} ${grind.name}</span>
+              </div>
+          `;
+          
+          if (preview.addedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label add">添加标签:</span>
+              <span class="tag-list">${preview.addedTags.map(t => `<span class="preview-tag tag-added">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          if (preview.enhancedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label enhance">增强效果:</span>
+              <span class="tag-list">${preview.enhancedTags.map(t => `<span class="preview-tag tag-enhanced">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          confirmContent += `
+              <div class="preview-row">
+                <span class="preview-label">最终标签:</span>
+                <span class="tag-list">${preview.finalTags.map(t => `<span class="preview-tag tag-final">${t}</span>`).join('')}</span>
+              </div>
+            </div>
+          `;
+          
+          this.showConfirmDialog(
+            '确认研磨',
+            confirmContent,
+            () => this.performGrind(grind.id)
+          );
+        };
       }
       
       container.appendChild(btn);
@@ -1676,16 +2042,89 @@ const Game = {
       btn.className = `craft-option-btn ${isLocked ? 'locked' : ''}`;
       btn.disabled = isLocked;
       
+      let previewHtml = '';
+      if (!isLocked && this.craftState.brewItem) {
+        const preview = this.calculatePreviewTags(this.craftState.brewItem, 'brew', brew.id);
+        previewHtml = '<div class="option-preview">';
+        
+        if (preview.addedTags.length > 0) {
+          previewHtml += `<div class="preview-added">添加: ${preview.addedTags.map(t => `<span class="tag-added">${t}</span>`).join(' ')}</div>`;
+        }
+        if (preview.enhancedTags.length > 0) {
+          previewHtml += `<div class="preview-enhanced">增强: ${preview.enhancedTags.map(t => `<span class="tag-enhanced">${t}</span>`).join(' ')}</div>`;
+        }
+        if (preview.reducedTags.length > 0) {
+          previewHtml += `<div class="preview-reduced">减弱: ${preview.reducedTags.map(t => `<span class="tag-reduced">${t}</span>`).join(' ')}</div>`;
+        }
+        
+        previewHtml += '</div>';
+      }
+      
       btn.innerHTML = `
         <div class="option-name">
           ${brew.icon} ${brew.name}
         </div>
         <div class="option-desc">${brew.description}</div>
+        ${previewHtml}
         ${isLocked ? `<div class="option-locked">🔒 需要解锁对应工具</div>` : ''}
       `;
       
       if (!isLocked) {
-        btn.onclick = () => this.performBrew(brew.id);
+        btn.onclick = () => {
+          const preview = this.calculatePreviewTags(this.craftState.brewItem, 'brew', brew.id);
+          
+          let confirmContent = `
+            <div class="preview-info">
+              <div class="preview-row">
+                <span class="preview-label">原料:</span>
+                <span>${this.craftState.brewItem.icon} ${this.craftState.brewItem.name}</span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-label">当前标签:</span>
+                <span class="tag-list">${this.craftState.brewItem.tags.map(t => `<span class="preview-tag">${t}</span>`).join('')}</span>
+              </div>
+              <div class="preview-arrow">↓</div>
+              <div class="preview-row">
+                <span class="preview-label">制作方式:</span>
+                <span>${brew.icon} ${brew.name}</span>
+              </div>
+          `;
+          
+          if (preview.addedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label add">添加标签:</span>
+              <span class="tag-list">${preview.addedTags.map(t => `<span class="preview-tag tag-added">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          if (preview.enhancedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label enhance">增强效果:</span>
+              <span class="tag-list">${preview.enhancedTags.map(t => `<span class="preview-tag tag-enhanced">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          if (preview.reducedTags.length > 0) {
+            confirmContent += `<div class="preview-row preview-change">
+              <span class="preview-label reduce">减弱效果:</span>
+              <span class="tag-list">${preview.reducedTags.map(t => `<span class="preview-tag tag-reduced">${t}</span>`).join('')}</span>
+            </div>`;
+          }
+          
+          confirmContent += `
+              <div class="preview-row">
+                <span class="preview-label">最终标签:</span>
+                <span class="tag-list">${preview.finalTags.map(t => `<span class="preview-tag tag-final">${t}</span>`).join('')}</span>
+              </div>
+            </div>
+          `;
+          
+          this.showConfirmDialog(
+            '确认萃取',
+            confirmContent,
+            () => this.performBrew(brew.id)
+          );
+        };
       }
       
       container.appendChild(btn);
