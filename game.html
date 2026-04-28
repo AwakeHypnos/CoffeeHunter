@@ -1165,10 +1165,22 @@
           <h2 class="workshop-title">咖啡制作工作台</h2>
           <div class="workstations">
             <div class="workstation">
+              <div class="workstation-icon">🧹</div>
+              <div class="workstation-name">预处理</div>
+              <div class="workstation-desc">生豆净化</div>
+              <div class="workstation-slot" id="process-slot" onclick="Game.handleWorkstationSlot('process')">
+                <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入生豆</span>
+              </div>
+              <div class="workstation-options" id="process-options">
+                <div class="options-placeholder">放入生豆后选择处理方式</div>
+              </div>
+            </div>
+            <div class="arrow-connector">→</div>
+            <div class="workstation">
               <div class="workstation-icon">🔥</div>
               <div class="workstation-name">烘焙</div>
               <div class="workstation-desc">生豆 → 熟豆</div>
-              <div class="workstation-slot" id="roast-slot">
+              <div class="workstation-slot" id="roast-slot" onclick="Game.handleWorkstationSlot('roast')">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入生豆</span>
               </div>
               <div class="workstation-options" id="roast-options">
@@ -1180,7 +1192,7 @@
               <div class="workstation-icon">⚙️</div>
               <div class="workstation-name">研磨</div>
               <div class="workstation-desc">熟豆 → 咖啡粉</div>
-              <div class="workstation-slot" id="grind-slot">
+              <div class="workstation-slot" id="grind-slot" onclick="Game.handleWorkstationSlot('grind')">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入熟豆</span>
               </div>
               <div class="workstation-options" id="grind-options">
@@ -1192,7 +1204,7 @@
               <div class="workstation-icon">💧</div>
               <div class="workstation-name">萃取</div>
               <div class="workstation-desc">咖啡粉 → 咖啡液</div>
-              <div class="workstation-slot" id="brew-slot">
+              <div class="workstation-slot" id="brew-slot" onclick="Game.handleWorkstationSlot('brew')">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入咖啡粉</span>
               </div>
               <div class="workstation-options" id="brew-options">
@@ -1204,15 +1216,36 @@
               <div class="workstation-icon">🥛</div>
               <div class="workstation-name">调和</div>
               <div class="workstation-desc">咖啡液 + 配料</div>
-              <div class="workstation-slot" id="blend-slot">
+              <div class="workstation-slot" id="blend-slot" onclick="Game.handleWorkstationSlot('blend')">
                 <span style="color: var(--text-secondary); font-size: 0.8rem;">点击放入咖啡液</span>
               </div>
               <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px;">
                 附加配料: <span id="additives-display">无</span>
               </div>
-              <button class="btn btn-primary workstation-btn" id="blend-btn" onclick="Game.performBlend()" disabled>
-                制作咖啡
-              </button>
+              <div class="workstation-options" id="blend-options">
+                <div class="blend-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary);">批量制作:</label>
+                    <select id="blend-quantity" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 0.85rem;">
+                      <option value="1">1杯</option>
+                      <option value="2">2杯</option>
+                      <option value="3">3杯</option>
+                      <option value="5">5杯</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-secondary workstation-btn" id="blend-preview-btn" onclick="Game.previewCoffee()" style="flex: 1; padding: 8px 12px; font-size: 0.85rem;">
+                      预览效果
+                    </button>
+                    <button class="btn btn-secondary workstation-btn" id="blend-clear-btn" onclick="Game.clearBlendSlot()" style="flex: 1; padding: 8px 12px; font-size: 0.85rem;">
+                      清空配料
+                    </button>
+                  </div>
+                  <button class="btn btn-primary workstation-btn" id="blend-btn" onclick="Game.performBlend()" disabled style="width: 100%; padding: 10px 16px; font-size: 0.9rem;">
+                    制作咖啡
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="craft-progress" style="margin-top: 30px;">
@@ -1220,18 +1253,22 @@
             <div class="progress-steps" id="craft-progress">
               <div class="progress-step">
                 <div class="progress-step-icon pending">1</div>
-                <span>烘焙</span>
+                <span>预处理</span>
               </div>
               <div class="progress-step">
                 <div class="progress-step-icon pending">2</div>
-                <span>研磨</span>
+                <span>烘焙</span>
               </div>
               <div class="progress-step">
                 <div class="progress-step-icon pending">3</div>
-                <span>萃取</span>
+                <span>研磨</span>
               </div>
               <div class="progress-step">
                 <div class="progress-step-icon pending">4</div>
+                <span>萃取</span>
+              </div>
+              <div class="progress-step">
+                <div class="progress-step-icon pending">5</div>
                 <span>调和</span>
               </div>
             </div>
