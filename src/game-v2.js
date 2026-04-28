@@ -1810,10 +1810,16 @@ const Game = {
     });
     
     Object.entries(groupedMaps).forEach(([regionKey, regionData]) => {
+      const regionSection = document.createElement('div');
+      regionSection.className = 'region-section';
+      
       const regionHeader = document.createElement('div');
       regionHeader.className = 'region-header';
       regionHeader.innerHTML = `<h3 class="region-title">${regionData.name}</h3>`;
-      container.appendChild(regionHeader);
+      regionSection.appendChild(regionHeader);
+      
+      const regionMapsContainer = document.createElement('div');
+      regionMapsContainer.className = 'region-maps';
       
       regionData.maps.forEach(map => {
         const card = document.createElement('div');
@@ -1895,8 +1901,11 @@ const Game = {
         `;
         
         card.onclick = () => this.selectMap(map);
-        container.appendChild(card);
+        regionMapsContainer.appendChild(card);
       });
+      
+      regionSection.appendChild(regionMapsContainer);
+      container.appendChild(regionSection);
     });
   },
   
