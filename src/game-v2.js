@@ -16,7 +16,10 @@ const Game = {
       highTempRoaster: false,
       espressoMachine: false,
       fineGrinder: false,
-      advancedGrinder: false
+      advancedGrinder: false,
+      fermentationChamber: false,
+      mokaPot: false,
+      brewingChamber: false
     },
     exploredToday: false,
     discovered: {}
@@ -1219,6 +1222,33 @@ const Game = {
       price: 400,
       unlocks: ['极细研磨', '极粗研磨'],
       unlocked: false
+    },
+    fermentationChamber: {
+      id: 'fermentationChamber',
+      name: '厌氧发酵箱',
+      icon: '🍇',
+      description: '密封发酵环境，创造独特的葡萄、荔枝、烈酒风味',
+      price: 350,
+      unlocks: ['厌氧发酵处理'],
+      unlocked: false
+    },
+    mokaPot: {
+      id: 'mokaPot',
+      name: '摩卡壶',
+      icon: '☕',
+      description: '蒸汽加压萃取，适合深烘豆子的浓醇焦香',
+      price: 180,
+      unlocks: ['摩卡壶萃取'],
+      unlocked: false
+    },
+    brewingChamber: {
+      id: 'brewingChamber',
+      name: '炼金浸泡箱',
+      icon: '🧪',
+      description: '长时间密封浸泡发酵，产出独一无二的炼金特调咖啡',
+      price: 500,
+      unlocks: ['浸泡酿造'],
+      unlocked: false
     }
   },
 
@@ -1747,7 +1777,10 @@ const Game = {
         highTempRoaster: false,
         espressoMachine: false,
         fineGrinder: false,
-        advancedGrinder: false
+        advancedGrinder: false,
+        fermentationChamber: false,
+        mokaPot: false,
+        brewingChamber: false
       },
       exploredToday: false,
       discovered: discovered
@@ -2851,7 +2884,7 @@ const Game = {
       
       if (method.requiredTool && !this.state.tools[method.requiredTool]) {
         disabled = true;
-        disabledReason = `需要解锁工具: ${this.tools[method.requiredTool]?.name || method.requiredTool}`;
+        disabledReason = `需要解锁工具: ${this.toolsShop[method.requiredTool]?.name || method.requiredTool}`;
       }
       
       if (method.exclusiveTo) {
