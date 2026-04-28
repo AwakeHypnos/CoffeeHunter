@@ -19,11 +19,7 @@ const Game = {
       advancedGrinder: false
     },
     exploredToday: false,
-    discovered: {
-      forest: { items: new Set(), dangers: new Set() },
-      mountain: { items: new Set(), dangers: new Set() },
-      volcano: { items: new Set(), dangers: new Set() }
-    }
+    discovered: {}
   },
   
   exploreState: {
@@ -66,6 +62,121 @@ const Game = {
   // ============================================
   
   baseItems: {
+    green_arabica: {
+      id: 'green_arabica',
+      name: '阿拉比卡生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '精品咖啡核心，高价基础豆。风味复杂、酸度柔和、香气浓郁、咖啡因低。',
+      origin: '阿拉比卡',
+      tags: ['果香', '花香', '酸感柔和', '阿拉比卡', '高品质'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    green_robusta: {
+      id: 'green_robusta',
+      name: '罗布斯塔生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '商业速溶、拼配基底。苦味重、醇厚、油脂厚、咖啡因极高、风味单调。',
+      origin: '罗布斯塔',
+      tags: ['苦味', '醇厚', '油脂', '高咖啡因', '罗布斯塔', '量产'],
+      rarity: 'common',
+      species: 'robusta'
+    },
+    green_liberica: {
+      id: 'green_liberica',
+      name: '利比利卡生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '小众珍品，迷雾区域、隐秘秘境专属掉落。烟熏、木质、热带水果重口，辨识度极强。',
+      origin: '利比利卡',
+      tags: ['烟熏', '木质', '热带水果', '利比利卡', '稀有', '天价'],
+      rarity: 'legendary',
+      species: 'liberica'
+    },
+    
+    green_yirgacheffe: {
+      id: 'green_yirgacheffe',
+      name: '耶加雪菲生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '埃塞俄比亚稀有豆，柑橘、柠檬、茉莉、白花、草莓、蜂蜜甜，清爽酸甜。',
+      origin: '埃塞俄比亚',
+      tags: ['柑橘', '花香', '草莓', '蜂蜜甜', '埃塞俄比亚', '稀有'],
+      rarity: 'rare',
+      species: 'arabica'
+    },
+    green_sidamo: {
+      id: 'green_sidamo',
+      name: '西达摩生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '埃塞俄比亚稀有豆，带有蓝莓、黑莓、柠檬皮的清新风味。',
+      origin: '埃塞俄比亚',
+      tags: ['蓝莓', '黑莓', '柠檬皮', '埃塞俄比亚', '稀有'],
+      rarity: 'rare',
+      species: 'arabica'
+    },
+    green_huahua: {
+      id: 'green_huahua',
+      name: '花魁生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '埃塞俄比亚传奇稀有豆，浓郁花香、热带水果、蜂蜜甜感。',
+      origin: '埃塞俄比亚',
+      tags: ['花香', '热带水果', '蜂蜜甜', '埃塞俄比亚', '传奇'],
+      rarity: 'epic',
+      species: 'arabica'
+    },
+    green_gesha_native: {
+      id: 'green_gesha_native',
+      name: '瑰夏原生种生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '埃塞俄比亚极稀有豆，瑰夏的原生种，栀子花、荔枝、芒果、兰花顶级花香果香。',
+      origin: '埃塞俄比亚',
+      tags: ['栀子花', '荔枝', '芒果', '兰花', '埃塞俄比亚', '极稀有'],
+      rarity: 'legendary',
+      species: 'arabica'
+    },
+    
+    green_kenya_aa: {
+      id: 'green_kenya_aa',
+      name: '肯尼亚AA生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '肯尼亚顶级稀有豆，黑醋栗、蔓越莓、番茄、尖锐果酸、浓郁莓果。',
+      origin: '肯尼亚',
+      tags: ['黑醋栗', '蔓越莓', '尖锐果酸', '浓郁莓果', '肯尼亚', '顶级'],
+      rarity: 'epic',
+      species: 'arabica'
+    },
+    
+    green_tanzanian: {
+      id: 'green_tanzanian',
+      name: '坦桑尼亚生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '坦桑尼亚产，菠萝、柚子、红糖、柔和果香。',
+      origin: '坦桑尼亚',
+      tags: ['菠萝', '柚子', '红糖', '柔和果香', '坦桑尼亚'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_rwanda: {
+      id: 'green_rwanda',
+      name: '卢旺达生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '卢旺达产，樱桃、红莓、红酒发酵感、淡淡香料味。',
+      origin: '卢旺达',
+      tags: ['樱桃', '红莓', '红酒发酵', '香料味', '卢旺达'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
     green_colombian: {
       id: 'green_colombian',
       name: '哥伦比亚生豆',
@@ -74,28 +185,22 @@ const Game = {
       description: '哥伦比亚产的平衡生豆，甜感和坚果味突出',
       origin: '哥伦比亚',
       tags: ['甜感', '坚果', '巧克力', '哥伦比亚'],
-      rarity: 'common'
+      rarity: 'common',
+      species: 'arabica'
     },
-    green_ethiopian: {
-      id: 'green_ethiopian',
-      name: '埃塞俄比亚生豆',
+    
+    green_santos: {
+      id: 'green_santos',
+      name: '桑托斯生豆',
       type: 'green_bean',
       icon: '🫘',
-      description: '来自埃塞俄比亚的优质生豆，带有明显的果香和花香',
-      origin: '埃塞俄比亚',
-      tags: ['果香', '花香', '埃塞俄比亚'],
-      rarity: 'uncommon'
+      description: '巴西稀有豆，烤坚果、可可、奶油、低酸、醇厚甜感。',
+      origin: '巴西',
+      tags: ['烤坚果', '可可', '奶油', '低酸', '醇厚甜感', '巴西', '稀有'],
+      rarity: 'rare',
+      species: 'arabica'
     },
-    green_kenyan: {
-      id: 'green_kenyan',
-      name: '肯尼亚生豆',
-      type: 'green_bean',
-      icon: '🫘',
-      description: '肯尼亚产的特色生豆，明亮的酸感和黑醋栗风味',
-      origin: '肯尼亚',
-      tags: ['果香', '酸感', '肯尼亚', '特色'],
-      rarity: 'rare'
-    },
+    
     green_brazilian: {
       id: 'green_brazilian',
       name: '巴西生豆',
@@ -104,7 +209,140 @@ const Game = {
       description: '巴西产的基础生豆，适合做意式拼配',
       origin: '巴西',
       tags: ['坚果', '巧克力', '巴西', '苦味'],
-      rarity: 'common'
+      rarity: 'common',
+      species: 'arabica'
+    },
+    
+    green_costa_rica: {
+      id: 'green_costa_rica',
+      name: '哥斯达黎加生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '哥斯达黎加产，蜂蜜、桃子、甘蔗、热带水果。',
+      origin: '哥斯达黎加',
+      tags: ['蜂蜜', '桃子', '甘蔗', '热带水果', '哥斯达黎加'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_guatemala: {
+      id: 'green_guatemala',
+      name: '危地马拉生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '火山土壤产出，烟熏、巧克力、黑樱桃。',
+      origin: '危地马拉',
+      tags: ['烟熏', '巧克力', '黑樱桃', '危地马拉'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_gesha_panama: {
+      id: 'green_gesha_panama',
+      name: '巴拿马瑰夏生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '传奇豆产区巴拿马，栀子花、荔枝、芒果、兰花、顶级花香果香。迷雾秘境宝箱掉落。',
+      origin: '巴拿马',
+      tags: ['栀子花', '荔枝', '芒果', '兰花', '巴拿马', '传奇', '顶级'],
+      rarity: 'legendary',
+      species: 'arabica'
+    },
+    
+    green_sumatra: {
+      id: 'green_sumatra',
+      name: '苏门答腊生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '印尼苏门答腊，湿厚发酵处理，低酸重醇。泥土、草本、黑巧克力、檀香、烟草、枫糖。',
+      origin: '印尼',
+      tags: ['泥土', '草本', '黑巧克力', '檀香', '烟草', '枫糖', '印尼', '低酸'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_java: {
+      id: 'green_java',
+      name: '爪哇生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '印尼爪哇岛产，厚重草本、香料木质调。',
+      origin: '印尼',
+      tags: ['草本', '香料', '木质', '印尼'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_bali: {
+      id: 'green_bali',
+      name: '巴厘岛生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '印尼巴厘岛产，香料、木质、淡淡果香。',
+      origin: '印尼',
+      tags: ['香料', '木质', '果香', '印尼'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_indian: {
+      id: 'green_indian',
+      name: '印度生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '印度产，香料风极强，豆蔻、胡椒、木质调。',
+      origin: '印度',
+      tags: ['豆蔻', '胡椒', '木质调', '印度', '香料风'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_yunnan: {
+      id: 'green_yunnan',
+      name: '云南生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '中国云南产，适配国风迷雾山林，新手友好原料。焦糖、红枣、坚果、淡淡蜜香，性价比极高。',
+      origin: '云南',
+      tags: ['焦糖', '红枣', '坚果', '蜜香', '云南', '新手友好'],
+      rarity: 'common',
+      species: 'arabica'
+    },
+    
+    green_papua: {
+      id: 'green_papua',
+      name: '巴布亚新几内亚生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '丛林浓雾，混合莓果、草药、奶油口感。',
+      origin: '巴布亚新几内亚',
+      tags: ['混合莓果', '草药', '奶油', '巴布亚'],
+      rarity: 'uncommon',
+      species: 'arabica'
+    },
+    
+    green_blue_mountain: {
+      id: 'green_blue_mountain',
+      name: '牙买加蓝山生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '海岛特殊产区，海岛雾气+海风，带有海盐、椰子、奶油调性。限定海岛地图掉落。',
+      origin: '牙买加',
+      tags: ['海盐', '椰子', '奶油', '海岛', '牙买加', '稀有'],
+      rarity: 'epic',
+      species: 'arabica'
+    },
+    
+    green_kona: {
+      id: 'green_kona',
+      name: '夏威夷科纳生豆',
+      type: 'green_bean',
+      icon: '🫘',
+      description: '海岛特殊产区，海岛雾气+海风，带有海盐、椰子、奶油调性。限定海岛地图掉落。',
+      origin: '夏威夷',
+      tags: ['海盐', '椰子', '奶油', '海岛', '夏威夷', '稀有'],
+      rarity: 'epic',
+      species: 'arabica'
     },
     
     milk_whole: {
@@ -290,60 +528,324 @@ const Game = {
   ],
 
   // ============================================
-  // 地图数据
+  // 地图数据（按四大产区分类）
   // ============================================
   
   maps: [
     {
-      id: 'forest',
-      name: '神秘森林',
-      icon: '🌲',
+      id: 'ethiopia',
+      name: '埃塞俄比亚迷雾高原',
+      icon: '🌍',
+      region: 'africa',
+      regionName: '非洲产区',
       difficulty: 'easy',
-      description: '一片宁静的森林，适合新手探索。这里生长着各种优质咖啡豆。',
-      tags: ['新手友好', '咖啡豆丰富', '危险低'],
+      description: '咖啡发源地，迷雾高原与火山区。酸质明亮、花果香浓郁，生长着耶加雪菲、西达摩等传奇咖啡豆。',
+      tags: ['咖啡发源地', '花果香', '酸质明亮', '新手友好'],
       rewards: { gold: 50, reputation: 10 },
       itemWeights: {
-        green_colombian: 35,
-        green_ethiopian: 20,
-        green_brazilian: 25,
-        fruit_orange: 10,
-        spice_cinnamon: 10
+        green_arabica: 30,
+        green_robusta: 20,
+        green_yunnan: 15,
+        fruit_orange: 15,
+        spice_cinnamon: 10,
+        milk_whole: 10
       },
-      dangerLevel: 1
+      rareItems: [
+        { id: 'green_yirgacheffe', name: '耶加雪菲', chance: 0.5 },
+        { id: 'green_sidamo', name: '西达摩', chance: 0.3 },
+        { id: 'green_huahua', name: '花魁', chance: 0.15 },
+        { id: 'green_gesha_native', name: '瑰夏原生种', chance: 0.05 }
+      ],
+      terrain: '高原',
+      dangerLevel: 1,
+      unlockRequirement: null
     },
     {
-      id: 'mountain',
-      name: '云雾山脉',
-      icon: '⛰️',
+      id: 'kenya',
+      name: '肯尼亚火山秘境',
+      icon: '🗻',
+      region: 'africa',
+      regionName: '非洲产区',
       difficulty: 'medium',
-      description: '高海拔地区，孕育着精品咖啡豆。但山路崎岖，需要小心野生动物。',
-      tags: ['高海拔', '精品豆', '中等危险'],
+      description: '肯尼亚火山地区，黑醋栗、蔓越莓、番茄、尖锐果酸、浓郁莓果风味。肯尼亚AA顶级稀有豆产地。',
+      tags: ['火山土壤', '尖锐果酸', '浓郁莓果', '中等危险'],
       rewards: { gold: 100, reputation: 25 },
       itemWeights: {
-        green_ethiopian: 30,
-        green_kenyan: 25,
-        green_colombian: 20,
-        fruit_berry: 15,
-        fruit_vanilla: 10
+        green_arabica: 25,
+        green_tanzanian: 20,
+        green_rwanda: 15,
+        fruit_berry: 20,
+        fruit_vanilla: 10,
+        spice_cardamom: 10
       },
-      dangerLevel: 2
+      rareItems: [
+        { id: 'green_kenya_aa', name: '肯尼亚AA', chance: 0.6 }
+      ],
+      terrain: '火山',
+      dangerLevel: 2,
+      unlockRequirement: { reputation: 20 }
     },
     {
-      id: 'volcano',
-      name: '火山地带',
-      icon: '🌋',
-      difficulty: 'hard',
-      description: '火山灰土壤孕育着传说中的极品咖啡豆。但危险四伏，野生动物出没频繁。',
-      tags: ['极品豆', '高风险高回报', '危险高'],
-      rewards: { gold: 200, reputation: 50 },
+      id: 'tanzania_rwanda',
+      name: '坦桑尼亚-卢旺达丛林',
+      icon: '🌴',
+      region: 'africa',
+      regionName: '非洲产区',
+      difficulty: 'medium',
+      description: '坦桑尼亚与卢旺达交界地带，菠萝、柚子、红糖、柔和果香，以及樱桃、红莓、红酒发酵感。',
+      tags: ['丛林', '柔和果香', '红酒发酵', '中等危险'],
+      rewards: { gold: 80, reputation: 20 },
       itemWeights: {
-        green_kenyan: 35,
-        green_ethiopian: 25,
-        spice_cardamom: 20,
+        green_tanzanian: 30,
+        green_rwanda: 25,
+        green_arabica: 20,
+        fruit_vanilla: 15,
+        spice_cinnamon: 10
+      },
+      rareItems: [],
+      terrain: '丛林',
+      dangerLevel: 2,
+      unlockRequirement: { reputation: 15 }
+    },
+    
+    {
+      id: 'colombia',
+      name: '哥伦比亚云雾山谷',
+      icon: '⛰️',
+      region: 'south_america',
+      regionName: '中南美洲产区',
+      difficulty: 'easy',
+      description: '哥伦比亚山谷与云雾森林，平衡柔和、坚果焦糖风味。焦糖、坚果、巧克力、柑橘、柔和酸感。',
+      tags: ['云雾森林', '平衡柔和', '坚果焦糖', '新手友好'],
+      rewards: { gold: 60, reputation: 12 },
+      itemWeights: {
+        green_colombian: 35,
+        green_arabica: 20,
+        green_brazilian: 15,
+        fruit_orange: 15,
+        spice_cinnamon: 10,
+        milk_whole: 5
+      },
+      rareItems: [],
+      terrain: '山谷',
+      dangerLevel: 1,
+      unlockRequirement: null
+    },
+    {
+      id: 'brazil',
+      name: '巴西平原农场',
+      icon: '🌾',
+      region: 'south_america',
+      regionName: '中南美洲产区',
+      difficulty: 'easy',
+      description: '巴西广阔平原，烤坚果、可可、奶油、低酸、醇厚甜感。桑托斯稀有豆产地。',
+      tags: ['平原农场', '低酸醇厚', '奶油甜感', '新手友好'],
+      rewards: { gold: 55, reputation: 10 },
+      itemWeights: {
+        green_brazilian: 40,
+        green_robusta: 20,
+        green_colombian: 15,
+        milk_whole: 15,
+        spice_cinnamon: 10
+      },
+      rareItems: [
+        { id: 'green_santos', name: '桑托斯', chance: 0.5 }
+      ],
+      terrain: '平原',
+      dangerLevel: 1,
+      unlockRequirement: null
+    },
+    {
+      id: 'costarica_guatemala',
+      name: '哥斯达黎加-危地马拉秘境',
+      icon: '🌴',
+      region: 'south_america',
+      regionName: '中南美洲产区',
+      difficulty: 'medium',
+      description: '哥斯达黎加与危地马拉交界，蜂蜜、桃子、甘蔗、热带水果，以及火山土壤产出的烟熏、巧克力、黑樱桃。',
+      tags: ['热带水果', '火山土壤', '烟熏巧克力', '中等危险'],
+      rewards: { gold: 100, reputation: 25 },
+      itemWeights: {
+        green_costa_rica: 25,
+        green_guatemala: 25,
+        green_colombian: 15,
+        fruit_vanilla: 15,
+        fruit_berry: 10,
+        spice_cinnamon: 10
+      },
+      rareItems: [],
+      terrain: '丘陵',
+      dangerLevel: 2,
+      unlockRequirement: { reputation: 30 }
+    },
+    {
+      id: 'panama',
+      name: '巴拿马瑰夏秘境',
+      icon: '🌸',
+      region: 'south_america',
+      regionName: '中南美洲产区',
+      difficulty: 'hard',
+      description: '传奇瑰夏产区，巴拿马迷雾秘境。栀子花、荔枝、芒果、兰花顶级花香果香。迷雾秘境宝箱掉落。',
+      tags: ['传奇产区', '顶级花香', '瑰夏', '高危险'],
+      rewards: { gold: 250, reputation: 60 },
+      itemWeights: {
+        green_arabica: 30,
+        green_costa_rica: 20,
+        green_guatemala: 15,
+        fruit_vanilla: 15,
+        milk_oat: 10,
+        spice_cardamom: 10
+      },
+      rareItems: [
+        { id: 'green_gesha_panama', name: '巴拿马瑰夏', chance: 0.3 }
+      ],
+      terrain: '秘境',
+      dangerLevel: 3,
+      unlockRequirement: { reputation: 80 }
+    },
+    
+    {
+      id: 'yunnan',
+      name: '云南迷雾山林',
+      icon: '🏔️',
+      region: 'asia',
+      regionName: '亚洲&大洋洲产区',
+      difficulty: 'easy',
+      description: '中国云南迷雾山林，国风山水。焦糖、红枣、坚果、淡淡蜜香，性价比极高的新手友好原料。',
+      tags: ['国风山林', '新手友好', '性价比高', '焦糖蜜香'],
+      rewards: { gold: 45, reputation: 8 },
+      itemWeights: {
+        green_yunnan: 45,
+        green_arabica: 20,
+        green_robusta: 15,
+        milk_whole: 10,
+        spice_cinnamon: 10
+      },
+      rareItems: [],
+      terrain: '山林',
+      dangerLevel: 1,
+      unlockRequirement: null
+    },
+    {
+      id: 'indonesia',
+      name: '印尼群岛雨林',
+      icon: '🏝️',
+      region: 'asia',
+      regionName: '亚洲&大洋洲产区',
+      difficulty: 'medium',
+      description: '印尼群岛（苏门答腊、爪哇、巴厘岛），雨林与潮湿沼泽。湿厚发酵处理，低酸重醇。泥土、草本、黑巧克力、檀香、烟草、枫糖。',
+      tags: ['雨林沼泽', '湿厚发酵', '低酸重醇', '中等危险'],
+      rewards: { gold: 90, reputation: 22 },
+      itemWeights: {
+        green_sumatra: 30,
+        green_java: 20,
+        green_bali: 15,
+        green_robusta: 15,
+        spice_cinnamon: 10,
+        milk_whole: 10
+      },
+      rareItems: [],
+      terrain: '雨林',
+      dangerLevel: 2,
+      unlockRequirement: { reputation: 25 }
+    },
+    {
+      id: 'india',
+      name: '印度香料丛林',
+      icon: '🌶️',
+      region: 'asia',
+      regionName: '亚洲&大洋洲产区',
+      difficulty: 'medium',
+      description: '印度丛林，香料风极强。豆蔻、胡椒、木质调独特风味。',
+      tags: ['香料风', '木质调', '独特风味', '中等危险'],
+      rewards: { gold: 85, reputation: 20 },
+      itemWeights: {
+        green_indian: 35,
+        green_robusta: 25,
+        green_arabica: 15,
+        spice_cardamom: 15,
+        spice_cinnamon: 10
+      },
+      rareItems: [],
+      terrain: '丛林',
+      dangerLevel: 2,
+      unlockRequirement: { reputation: 35 }
+    },
+    {
+      id: 'papua',
+      name: '巴布亚新几内亚浓雾',
+      icon: '🌿',
+      region: 'asia',
+      regionName: '亚洲&大洋洲产区',
+      difficulty: 'hard',
+      description: '巴布亚新几内亚丛林浓雾，混合莓果、草药、奶油口感。神秘的大洋洲风味。',
+      tags: ['丛林浓雾', '混合莓果', '草药奶油', '高危险'],
+      rewards: { gold: 150, reputation: 40 },
+      itemWeights: {
+        green_papua: 30,
+        green_arabica: 20,
+        green_sumatra: 15,
+        fruit_berry: 15,
         fruit_vanilla: 10,
         milk_oat: 10
       },
-      dangerLevel: 3
+      rareItems: [
+        { id: 'green_liberica', name: '利比利卡', chance: 0.15 }
+      ],
+      terrain: '浓雾',
+      dangerLevel: 3,
+      unlockRequirement: { reputation: 60 }
+    },
+    
+    {
+      id: 'jamaica',
+      name: '牙买加蓝山孤岛',
+      icon: '🏖️',
+      region: 'island',
+      regionName: '海岛特殊产区',
+      difficulty: 'hard',
+      description: '牙买加蓝山孤岛迷雾，海岛雾气+海风。带有海盐、椰子、奶油调性。限定海岛地图掉落。',
+      tags: ['海岛迷雾', '海盐椰子', '奶油调性', '高危险'],
+      rewards: { gold: 200, reputation: 50 },
+      itemWeights: {
+        green_arabica: 30,
+        green_colombian: 20,
+        green_brazilian: 15,
+        milk_oat: 15,
+        fruit_vanilla: 10,
+        spice_cinnamon: 10
+      },
+      rareItems: [
+        { id: 'green_blue_mountain', name: '牙买加蓝山', chance: 0.35 }
+      ],
+      terrain: '海岛',
+      dangerLevel: 3,
+      unlockRequirement: { reputation: 70 }
+    },
+    {
+      id: 'hawaii',
+      name: '夏威夷科纳海岸',
+      icon: '🌺',
+      region: 'island',
+      regionName: '海岛特殊产区',
+      difficulty: 'hard',
+      description: '夏威夷科纳海岸雾带，海岛雾气+海风。带有海盐、椰子、奶油调性。限定海岛地图掉落。',
+      tags: ['海岸雾带', '海盐椰子', '奶油调性', '高危险'],
+      rewards: { gold: 200, reputation: 50 },
+      itemWeights: {
+        green_arabica: 30,
+        green_colombian: 20,
+        green_costa_rica: 15,
+        milk_oat: 15,
+        fruit_vanilla: 10,
+        fruit_berry: 10
+      },
+      rareItems: [
+        { id: 'green_kona', name: '夏威夷科纳', chance: 0.35 }
+      ],
+      terrain: '海岸',
+      dangerLevel: 3,
+      unlockRequirement: { reputation: 70 }
     }
   ],
 
@@ -809,13 +1311,25 @@ const Game = {
   // 主菜单
   // ============================================
   
+  getMapDiscovered(mapId) {
+    if (!this.state.discovered[mapId]) {
+      this.state.discovered[mapId] = { items: new Set(), dangers: new Set() };
+    }
+    return this.state.discovered[mapId];
+  },
+
   startNewGame() {
+    const discovered = {};
+    this.maps.forEach(map => {
+      discovered[map.id] = { items: new Set(), dangers: new Set() };
+    });
+    
     this.state = {
       gold: 100,
       reputation: 0,
       day: 1,
       inventory: [
-        { item: { ...this.baseItems.green_colombian }, count: 3 },
+        { item: { ...this.baseItems.green_yunnan }, count: 3 },
         { item: { ...this.baseItems.milk_whole }, count: 2 },
         { item: { ...this.baseItems.spice_cinnamon }, count: 1 }
       ],
@@ -829,11 +1343,7 @@ const Game = {
         advancedGrinder: false
       },
       exploredToday: false,
-      discovered: {
-        forest: { items: new Set(), dangers: new Set() },
-        mountain: { items: new Set(), dangers: new Set() },
-        volcano: { items: new Set(), dangers: new Set() }
-      }
+      discovered: discovered
     };
     
     this.craftState = {
@@ -887,78 +1397,123 @@ const Game = {
     
     container.innerHTML = '';
     
+    const groupedMaps = {};
     this.maps.forEach(map => {
-      const card = document.createElement('div');
-      card.className = `map-card ${this.state.selectedMap?.id === map.id ? 'selected' : ''}`;
+      const region = map.region || 'other';
+      if (!groupedMaps[region]) {
+        groupedMaps[region] = { name: map.regionName || '其他地区', maps: [] };
+      }
+      groupedMaps[region].maps.push(map);
+    });
+    
+    Object.entries(groupedMaps).forEach(([regionKey, regionData]) => {
+      const regionHeader = document.createElement('div');
+      regionHeader.className = 'region-header';
+      regionHeader.innerHTML = `<h3 class="region-title">${regionData.name}</h3>`;
+      container.appendChild(regionHeader);
       
-      const difficultyClass = map.difficulty === 'easy' ? 'easy' : 
-                              map.difficulty === 'medium' ? 'medium' : 'hard';
-      const difficultyText = map.difficulty === 'easy' ? '简单' : 
-                             map.difficulty === 'medium' ? '中等' : '困难';
-      
-      const knownItems = [];
-      const unknownItems = [];
-      const mapDiscovered = this.state.discovered[map.id] || { items: new Set(), dangers: new Set() };
-      Object.keys(map.itemWeights).forEach(itemId => {
-        const item = this.baseItems[itemId];
-        if (item) {
-          if (mapDiscovered.items.has(itemId)) {
-            knownItems.push(item);
-          } else {
-            unknownItems.push(item);
+      regionData.maps.forEach(map => {
+        const card = document.createElement('div');
+        const isUnlocked = this.isMapUnlocked(map);
+        const isSelected = this.state.selectedMap?.id === map.id;
+        card.className = `map-card ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+        
+        const difficultyClass = map.difficulty === 'easy' ? 'easy' : 
+                                map.difficulty === 'medium' ? 'medium' : 'hard';
+        const difficultyText = map.difficulty === 'easy' ? '简单' : 
+                               map.difficulty === 'medium' ? '中等' : '困难';
+        
+        const knownItems = [];
+        const unknownItems = [];
+        const mapDiscovered = this.getMapDiscovered(map.id);
+        Object.keys(map.itemWeights).forEach(itemId => {
+          const item = this.baseItems[itemId];
+          if (item) {
+            if (mapDiscovered.items.has(itemId)) {
+              knownItems.push(item);
+            } else {
+              unknownItems.push(item);
+            }
           }
+        });
+        
+        const dangerTypes = [];
+        if (map.dangerLevel >= 1) dangerTypes.push('野生动物出没');
+        if (map.dangerLevel >= 2) dangerTypes.push('地形复杂');
+        if (map.dangerLevel >= 3) dangerTypes.push('恶劣天气');
+        
+        const knownDangers = dangerTypes.filter(d => mapDiscovered.dangers.has(d));
+        const unknownDangerCount = dangerTypes.length - knownDangers.length;
+        
+        let lockInfo = '';
+        if (!isUnlocked && map.unlockRequirement) {
+          const req = map.unlockRequirement;
+          let reqText = '';
+          if (req.reputation) reqText += `需要 ${req.reputation} 声望`;
+          lockInfo = `<div class="map-lock-info">🔒 ${reqText}</div>`;
         }
-      });
-      
-      const dangerTypes = [];
-      if (map.dangerLevel >= 1) dangerTypes.push('野生动物出没');
-      if (map.dangerLevel >= 2) dangerTypes.push('地形复杂');
-      if (map.dangerLevel >= 3) dangerTypes.push('恶劣天气');
-      
-      const knownDangers = dangerTypes.filter(d => mapDiscovered.dangers.has(d));
-      const unknownDangerCount = dangerTypes.length - knownDangers.length;
-      
-      card.innerHTML = `
-        <div class="map-card-header">
-          <div class="map-card-name">${map.icon} ${map.name}</div>
-          <div class="map-card-difficulty ${difficultyClass}">${difficultyText}</div>
-        </div>
-        <div class="map-card-desc">${map.description}</div>
-        <div class="map-card-tags">
-          ${map.tags.map(tag => `<span class="map-tag">${tag}</span>`).join('')}
-        </div>
-        <div class="map-card-discoveries">
-          <div class="discovery-section">
-            <div class="discovery-label">🎒 已知素材:</div>
-            <div class="discovery-items">
-              ${knownItems.length > 0 ? 
-                knownItems.map(item => `<span class="discovery-item known" title="${item.name}">${item.icon}</span>`).join('') :
-                '<span class="discovery-none">暂未发现</span>'
-              }
-              ${unknownItems.length > 0 ? `<span class="discovery-unknown">+${unknownItems.length}种未知</span>` : ''}
-            </div>
+        
+        card.innerHTML = `
+          <div class="map-card-header">
+            <div class="map-card-name">${map.icon} ${map.name}</div>
+            <div class="map-card-difficulty ${difficultyClass}">${difficultyText}</div>
           </div>
-          ${dangerTypes.length > 0 ? `
-          <div class="discovery-section">
-            <div class="discovery-label">⚠️ 已知危险:</div>
-            <div class="discovery-items">
-              ${knownDangers.length > 0 ? 
-                knownDangers.map(d => `<span class="discovery-item danger">${d}</span>`).join('') :
-                '<span class="discovery-none">暂未发现</span>'
-              }
-              ${unknownDangerCount > 0 ? `<span class="discovery-unknown">+${unknownDangerCount}种未知</span>` : ''}
+          <div class="map-card-desc">${map.description}</div>
+          <div class="map-card-tags">
+            ${map.tags.map(tag => `<span class="map-tag">${tag}</span>`).join('')}
+          </div>
+          ${lockInfo}
+          ${isUnlocked ? `
+          <div class="map-card-discoveries">
+            <div class="discovery-section">
+              <div class="discovery-label">🎒 已知素材:</div>
+              <div class="discovery-items">
+                ${knownItems.length > 0 ? 
+                  knownItems.map(item => `<span class="discovery-item known" title="${item.name}">${item.icon}</span>`).join('') :
+                  '<span class="discovery-none">暂未发现</span>'
+                }
+                ${unknownItems.length > 0 ? `<span class="discovery-unknown">+${unknownItems.length}种未知</span>` : ''}
+              </div>
             </div>
+            ${dangerTypes.length > 0 ? `
+            <div class="discovery-section">
+              <div class="discovery-label">⚠️ 已知危险:</div>
+              <div class="discovery-items">
+                ${knownDangers.length > 0 ? 
+                  knownDangers.map(d => `<span class="discovery-item danger">${d}</span>`).join('') :
+                  '<span class="discovery-none">暂未发现</span>'
+                }
+                ${unknownDangerCount > 0 ? `<span class="discovery-unknown">+${unknownDangerCount}种未知</span>` : ''}
+              </div>
+            </div>
+            ` : ''}
           </div>
           ` : ''}
-        </div>
-      `;
-      
-      card.onclick = () => this.selectMap(map);
-      container.appendChild(card);
+        `;
+        
+        card.onclick = () => this.selectMap(map);
+        container.appendChild(card);
+      });
     });
   },
   
+  isMapUnlocked(map) {
+    if (!map.unlockRequirement) return true;
+    if (map.unlockRequirement.reputation && this.state.reputation >= map.unlockRequirement.reputation) {
+      return true;
+    }
+    return false;
+  },
+
   selectMap(map) {
+    if (!this.isMapUnlocked(map)) {
+      const req = map.unlockRequirement;
+      let reqText = '';
+      if (req.reputation) reqText += `需要 ${req.reputation} 声望`;
+      this.addMessage(`🔒 该地区尚未解锁！${reqText}`, 'warning');
+      return;
+    }
+    
     this.state.selectedMap = map;
     this.renderMapCards();
     
@@ -1243,6 +1798,50 @@ const Game = {
     }
   },
 
+  getRandomRareItem(mapData) {
+    if (!mapData.rareItems || mapData.rareItems.length === 0) {
+      return null;
+    }
+    
+    const totalChance = mapData.rareItems.reduce((sum, item) => sum + item.chance, 0);
+    let random = Math.random() * totalChance;
+    
+    for (const rareItem of mapData.rareItems) {
+      random -= rareItem.chance;
+      if (random <= 0) {
+        return this.baseItems[rareItem.id];
+      }
+    }
+    
+    return this.baseItems[mapData.rareItems[0].id];
+  },
+
+  collectRareItem(item, triggerType) {
+    if (!item) return false;
+    
+    const currentMapId = this.state.selectedMap?.id;
+    const mapDiscovered = currentMapId ? this.getMapDiscovered(currentMapId) : null;
+    
+    const existing = this.state.inventory.find(i => i.item.id === item.id);
+    if (existing) {
+      existing.count++;
+    } else {
+      this.state.inventory.push({ item: { ...item }, count: 1 });
+    }
+    this.exploreState.collectedItems++;
+    
+    if (mapDiscovered && !mapDiscovered.items.has(item.id)) {
+      mapDiscovered.items.add(item.id);
+      this.addMessage(`📖 发现稀有素材: ${item.icon} ${item.name}！`, 'success');
+    }
+    
+    const triggerText = triggerType === 'walk' ? '行走时' : '采集时';
+    this.addMessage(`✨ ${triggerText}幸运获得稀有豆: ${item.icon} ${item.name}！`, 'success');
+    
+    this.renderExploreInventory();
+    return true;
+  },
+
   movePlayer(direction) {
     const pos = this.exploreState.playerPos;
     let newX = pos.x;
@@ -1264,7 +1863,7 @@ const Game = {
     if (cell.isDanger) {
       const dangerType = '野生动物出没';
       const currentMapId = this.state.selectedMap?.id;
-      const mapDiscovered = currentMapId ? this.state.discovered[currentMapId] : null;
+      const mapDiscovered = currentMapId ? this.getMapDiscovered(currentMapId) : null;
       
       if (mapDiscovered && !mapDiscovered.dangers.has(dangerType)) {
         mapDiscovered.dangers.add(dangerType);
@@ -1288,6 +1887,16 @@ const Game = {
       }
     }
     
+    if (!cell.isExit && !cell.isDanger) {
+      if (Math.random() < 0.001) {
+        const mapData = this.state.selectedMap;
+        const rareItem = this.getRandomRareItem(mapData);
+        if (rareItem) {
+          this.collectRareItem(rareItem, 'walk');
+        }
+      }
+    }
+    
     if (cell.isExit) {
       this.addMessage('🚪 到达逃离点！点击此处或按ESC结束探索。', 'success');
     }
@@ -1305,7 +1914,9 @@ const Game = {
     }
     
     const currentMapId = this.state.selectedMap?.id;
-    const mapDiscovered = currentMapId ? this.state.discovered[currentMapId] : null;
+    const mapDiscovered = currentMapId ? this.getMapDiscovered(currentMapId) : null;
+    
+    let collectedGreenBean = false;
     
     cell.items.forEach(itemId => {
       const item = this.baseItems[itemId];
@@ -1318,6 +1929,10 @@ const Game = {
         }
         this.exploreState.collectedItems++;
         
+        if (item.type === 'green_bean') {
+          collectedGreenBean = true;
+        }
+        
         if (mapDiscovered && !mapDiscovered.items.has(itemId)) {
           mapDiscovered.items.add(itemId);
           this.addMessage(`📖 在本地区发现新素材: ${item.icon} ${item.name}！`, 'success');
@@ -1326,6 +1941,14 @@ const Game = {
         this.addMessage(`✨ 采集到了 ${item.icon} ${item.name}！`, 'success');
       }
     });
+    
+    if (collectedGreenBean && Math.random() < 0.05) {
+      const mapData = this.state.selectedMap;
+      const rareItem = this.getRandomRareItem(mapData);
+      if (rareItem) {
+        this.collectRareItem(rareItem, 'collect');
+      }
+    }
     
     cell.items = [];
     this.renderExploreMap();
