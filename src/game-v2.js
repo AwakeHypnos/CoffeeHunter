@@ -2564,7 +2564,7 @@ const Game = {
       case 'roast':
         itemsArray = this.craftState.roastItems;
         slotId = 'roast-slot';
-        placeholder = '点击放入生豆';
+        placeholder = '点击放入生豆或预处理后豆子';
         requiredType = 'green_bean';
         renderOptions = () => this.renderRoastOptions();
         break;
@@ -2615,14 +2615,25 @@ const Game = {
         break;
     }
     
-    if (requiredType && item.type !== requiredType) {
+    const allowedTypes = {
+      'process': ['green_bean'],
+      'roast': ['green_bean', 'processed_bean'],
+      'grind': ['roasted_bean'],
+      'brew': ['coffee_powder'],
+      'blend': ['coffee_liquid']
+    };
+    
+    const slotAllowedTypes = allowedTypes[slotType] || [];
+    if (slotAllowedTypes.length > 0 && !slotAllowedTypes.includes(item.type)) {
       const typeNames = {
         'green_bean': '生咖啡豆',
+        'processed_bean': '预处理后生豆',
         'roasted_bean': '熟咖啡豆',
         'coffee_powder': '咖啡粉',
         'coffee_liquid': '咖啡液'
       };
-      this.addMessage(`需要${typeNames[requiredType] || requiredType}！`, 'warning');
+      const requiredNames = slotAllowedTypes.map(t => typeNames[t] || t).join(' 或 ');
+      this.addMessage(`需要${requiredNames}！`, 'warning');
       return;
     }
     
@@ -2747,9 +2758,9 @@ const Game = {
       case 'roast':
         itemsArray = this.craftState.roastItems;
         slotId = 'roast-slot';
-        placeholder = '点击放入生豆';
+        placeholder = '点击放入生豆或预处理后豆子';
         optionsContainerId = 'roast-options';
-        optionsPlaceholder = '放入生豆后选择烘焙程度';
+        optionsPlaceholder = '放入生豆或预处理后豆子后选择烘焙程度';
         break;
       case 'grind':
         itemsArray = this.craftState.grindItems;
@@ -3596,11 +3607,11 @@ const Game = {
     
     this.craftState.roastItems = [];
     this.craftState.roastLevel = roastLevelId;
-    this.resetSlot('roast-slot', '点击放入生豆');
+    this.resetSlot('roast-slot', '点击放入生豆或预处理后豆子');
     
     const roastContainer = document.getElementById('roast-options');
     if (roastContainer) {
-      roastContainer.innerHTML = '<div class="options-placeholder">放入生豆后选择烘焙程度</div>';
+      roastContainer.innerHTML = '<div class="options-placeholder">放入生豆或预处理后豆子后选择烘焙程度</div>';
     }
     
     this.updateSlotCounts();
