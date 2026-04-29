@@ -3748,6 +3748,10 @@ const Game = {
       coffees.push(coffee);
     });
     
+    coffees.forEach(coffee => {
+      this.state.coffeeStock.push(coffee);
+    });
+    
     if (coffees.length === 1) {
       this.craftState.finishedCoffee = coffees[0];
       this.showFinishedCoffee(coffees[0]);
@@ -3758,11 +3762,8 @@ const Game = {
       this.addMessage(`   标签: ${coffees[0].tags.join(', ')}`);
       this.addMessage(`   描述: ${coffees[0].description}`);
       this.addMessage(`   建议售价: ${coffees[0].price} 金币`);
+      this.addMessage(`   已自动存入咖啡库存`);
     } else {
-      coffees.forEach(coffee => {
-        this.state.coffeeStock.push(coffee);
-      });
-      
       this.addMessage(`☕ 批量咖啡制作完成！`, 'success');
       this.addMessage(`   制作数量: ${blendCount} 杯`);
       this.addMessage(`   已自动存入咖啡库存`);
@@ -3820,14 +3821,6 @@ const Game = {
   },
 
   storeCoffee() {
-    if (!this.craftState.finishedCoffee) {
-      this.addMessage('没有可存储的咖啡！', 'warning');
-      return;
-    }
-    
-    this.state.coffeeStock.push(this.craftState.finishedCoffee);
-    this.addMessage(`📦 咖啡已存入库存: ${this.craftState.finishedCoffee.name}`, 'success');
-    
     document.getElementById('finished-coffee-container').classList.add('hidden');
     this.craftState.finishedCoffee = null;
     
