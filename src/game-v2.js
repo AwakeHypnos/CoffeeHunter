@@ -2657,7 +2657,11 @@ const Game = {
     }
     
     this.updateSlotCounts();
-    this.renderWorkshopInventory();
+    if (slotType === 'process') {
+      this.renderProcessingInventory();
+    } else {
+      this.renderWorkshopInventory();
+    }
   },
 
   updateSlotDisplayMultiple(slotId, itemsArray, placeholder) {
@@ -2799,7 +2803,11 @@ const Game = {
     
     this.updateSlotCounts();
     this.addMessage(`➖ 取出 ${removedItems.length} 个物品`);
-    this.renderWorkshopInventory();
+    if (slotType === 'process') {
+      this.renderProcessingInventory();
+    } else {
+      this.renderWorkshopInventory();
+    }
   },
 
   clearSlot(slotType) {
