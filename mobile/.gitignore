@@ -1,0 +1,16 @@
+node_modules/
+dist/
+web/
+test-reports/
+releases/
+.DS_Store
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+ios/App/DerivedData/
+ios/App/build/
+*.xcarchive
+*.ipa
+*.aab
+*.apk

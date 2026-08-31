@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CoffeeHunter</string>
+    <string name="title_activity_main">CoffeeHunter</string>
+    <string name="package_name">com.AwakeHypnos.coffeehunter</string>
+    <string name="custom_url_scheme">com.AwakeHypnos.coffeehunter</string>
+</resources>

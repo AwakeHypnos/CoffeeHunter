@@ -1,0 +1,30 @@
+{
+  "appId": "com.AwakeHypnos.coffeehunter",
+  "appName": "CoffeeHunter",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#0f0f1a",
+  "ios": {
+    "backgroundColor": "#0f0f1a",
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "backgroundColor": "#0f0f1a",
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "disable",
+      "style": "DARK",
+      "hidden": true
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#0f0f1a",
+      "showSpinner": false
+    }
+  }
+}
